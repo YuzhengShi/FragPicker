@@ -6,3 +6,25 @@
 *.txt
 *.frag
 *.trace
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Generated trace / analysis outputs
+trace.result
+*.merged
+*.sorted
+*.log

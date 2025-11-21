@@ -1,0 +1,62 @@
+# FragPicker Parallel Analyzer - Default Configuration
+
+# Mount point configuration
+mount_point: "/mnt"
+temp_dir: "/tmp/fragpicker"
+
+# FIEMAP configuration
+fiemap:
+  max_extents_per_call: 32
+  retry_attempts: 3
+  retry_delay_ms: 100
+  timeout_seconds: 30
+
+# Parallel processing configuration
+parallel:
+  # Worker threads
+  num_workers: 8
+  auto_detect_cores: true
+  max_workers: 64
+  enable_hyperthreading: false
+  
+  # Queue settings
+  queue_size: 10000
+  worker_timeout: 300
+  
+  # Load balancing
+  use_work_stealing: true
+  task_chunk_size: 1
+
+# Inode mapping configuration
+inode_map:
+  cache_enabled: true
+  cache_ttl_seconds: 3600
+  parallel_find: false
+
+# Performance monitoring
+performance:
+  enable_monitoring: true
+  sample_interval_ms: 100
+  collect_cpu_stats: true
+  collect_memory_stats: true
+  collect_io_stats: true
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file_path: null  # Set to enable file logging
+  max_file_size_mb: 100
+  backup_count: 5
+  enable_console: true
+
+# Benchmark settings (for --benchmark mode)
+benchmark:
+  num_runs: 3
+  warmup_runs: 1
+
+# Dashboard settings
+dashboard:
+  enabled: false
+  host: "127.0.0.1"
+  port: 5000
+  update_interval_ms: 500
