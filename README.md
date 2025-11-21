@@ -2,6 +2,40 @@
 
 FragPicker with **up to 6.6x faster analysis** on production workloads through parallel optimization.
 
+## Origin and Credits
+
+This repository is a **fork** of the original FragPicker project by **Jonggyu Park et al. (SOSP '21)**.
+
+- Original project: FragPicker – "FragPicker: A New Defragmentation Tool for Modern Storage Devices"
+- Original repository: https://github.com/jonggyup/FragPicker
+- Original license: MIT License (included verbatim in `LICENSE`)
+
+This branch (`parallel-analysis`) **does not reimplement FragPicker from scratch**. Instead, it extends the original implementation with a **parallel analysis enhancement** while preserving the original workflow and semantics.
+
+## Parallel Analysis Enhancements (This Work)
+
+Relative to the original FragPicker codebase, this branch adds:
+
+- `src/analysis/parallel_analyzer/` (new):
+  - `fiemap.py`: direct FIEMAP ioctl wrapper (ctypes) with retry logic and error handling.
+  - `inode_mapper.py`: batch inode mapping using a single `find` to build an inode→path map.
+  - `parallel_processor.py` / `multiprocess_processor.py`: multi-threaded and multiprocess file processing engines.
+  - `parallel_sorter.py`: parallel sorting of per-file analysis results.
+  - `config.py`, `logger.py`, `performance_analyzer.py`, `progress_monitor.py`: configuration, structured logging, profiling, and progress monitoring.
+
+- `src/analysis/processing.py` (modified):
+  - Adds a `--parallel` mode and configuration support while keeping the original sequential behavior as the baseline.
+  - Integrates batch inode mapping and FIEMAP-based extent detection into the existing analysis pipeline.
+
+- `tests/` (extended):
+  - New tests for FIEMAP correctness, parallel vs sequential correctness, stress tests, and adaptive parallelism.
+
+- `benchmarks/` (new):
+  - Scripts for speedup, scalability, and slow-I/O simulations, plus memory profiling and JSON exports for analysis.
+
+All original FragPicker code is © 2021 **Jonggyu Park** and contributors (MIT License).  
+All new code and modifications for the **parallel analysis enhancement** are © 2025 **Yuzheng Shi**, also under the MIT License.
+
 ## What's New - Parallel Analysis
 
 This enhanced version of FragPicker adds comprehensive parallel processing optimizations:
