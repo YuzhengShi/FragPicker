@@ -1,310 +1,198 @@
 # FragPicker - Parallel Analysis Enhancement
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 70+ Passing](https://img.shields.io/badge/tests-70%2B%20passing-brightgreen.svg)](tests/)
+FragPicker with **up to 12.74x faster analysis** on I/O-bound workloads through parallel optimization.
 
-**Up to 6.6x faster fragmentation analysis** on production workloads through intelligent parallel optimization.
+## Origin and Credits
 
----
+This repository is a **fork** of the original FragPicker project by **Jonggyu Park et al. (SOSP '21)**.
 
-## Quick Overview
+- Original project: FragPicker – "FragPicker: A New Defragmentation Tool for Modern Storage Devices"
+- Original repository: https://github.com/jonggyup/FragPicker
+- Original license: MIT License (included verbatim in `LICENSE`)
 
-FragPicker Parallel extends the original [FragPicker (SOSP '21)](https://dl.acm.org/doi/10.1145/3477132.3483593) defragmentation tool with high-performance parallel analysis capabilities. This enhancement eliminates scalability bottlenecks when analyzing large filesystems with 100,000+ files.
+This branch (`parallel-analysis`) **does not reimplement FragPicker from scratch**. Instead, it extends the original implementation with a **parallel analysis enhancement** while preserving the original workflow and semantics.
 
-### Key Achievements
+## Parallel Analysis Enhancements (This Work)
 
-**6.6x speedup** on slow I/O (HDD, network filesystems)  
-**100% correctness** validated (2,100+ files, byte-for-byte verification)  
-**Production-ready** with 70+ comprehensive tests  
-**Adaptive optimization** automatically selects best configuration  
-**Zero breaking changes** - 100% backward compatible
+Relative to the original FragPicker codebase, this branch adds:
 
-### Performance at a Glance
+- `src/analysis/parallel_analyzer/` (new):
+  - `fiemap.py`: direct FIEMAP ioctl wrapper (ctypes) with retry logic and error handling.
+  - `inode_mapper.py`: batch inode mapping using a single `find` to build an inode→path map.
+  - `parallel_processor.py` / `multiprocess_processor.py`: multi-threaded and multiprocess file processing engines.
+  - `parallel_sorter.py`: parallel sorting of per-file analysis results.
+  - `config.py`, `logger.py`, `performance_analyzer.py`, `progress_monitor.py`: configuration, structured logging, profiling, and progress monitoring.
 
-| Storage Type | Sequential | Parallel | Speedup |
-|--------------|-----------|----------|---------|
-| **HDD/Network** | 406 files/sec | 2,873 files/sec | **6.6x** |
-| **Modern SSD** | 11,223 files/sec | Auto-uses sequential | **Optimal** |
+- `src/analysis/processing.py` (modified):
+  - Adds a `--parallel` mode and configuration support while keeping the original sequential behavior as the baseline.
+  - Integrates batch inode mapping and FIEMAP-based extent detection into the existing analysis pipeline.
 
----
+- `tests/` (extended):
+  - New tests for FIEMAP correctness, parallel vs sequential correctness, stress tests, and adaptive parallelism.
+
+- `benchmarks/` (new):
+  - Scripts for speedup, scalability, and slow-I/O simulations, plus memory profiling and JSON exports for analysis.
+
+All original FragPicker code is © 2021 **Jonggyu Park** and contributors (MIT License).  
+All new code and modifications for the **parallel analysis enhancement** are © 2025 **Yuzheng Shi**, also under the MIT License.
+
+## What's New - Parallel Analysis
+
+This enhanced version of FragPicker adds comprehensive parallel processing optimizations:
+
+### Key Improvements
+
+| Feature | Original | Enhanced | Benefit |
+|---------|----------|----------|---------|
+| Inode mapping | N×`find` calls | 1×`find` call | **O(N) → O(1) lookup** |
+| Extent detection | `filefrag` subprocess | Direct FIEMAP ioctl | **No subprocess overhead** |
+| File processing | Sequential | Parallel (multi-thread/process) | **Up to 12.74x on slow I/O** |
+| Correctness | Assumed | Byte-for-byte validated | **2,100+ file verification** |
+
+### Measured Performance
+
+Benchmarks conducted on 4-core Intel CPU, NVMe SSD, ext4 filesystem with 1,000 files (100KB each).
+
+**Slow I/O (5ms latency simulation - HDD/Network conditions)**:
+
+| Workers | Threading Speedup | Multiprocess Speedup |
+|:-------:|:-----------------:|:--------------------:|
+| 2       | 2.02×             | 1.92×                |
+| 4       | 4.17×             | 4.20×                |
+| 8       | 8.44×             | 7.44×                |
+| 16      | **12.74×**        | **12.55×**           |
+
+*Baseline: Sequential = 7.28s*
+
+**Fast I/O (Native NVMe SSD)**:
+- Sequential execution is **optimal** (0.028s for 1,000 files)
+- Parallelization adds overhead on fast storage—adaptive selection automatically uses sequential mode
+- FIEMAP operations complete in ~28μs per file on modern SSDs
+
+**Key Insight**: Parallelization benefits depend on I/O latency. When per-file latency exceeds ~1ms, parallel processing provides substantial speedups. On fast NVMe storage, sequential execution remains optimal.
+
+**Correctness Validated**:
+- 100% byte-for-byte identical output (parallel vs sequential)
+- Tested on 2,100+ files with 0 mismatches
 
 ## Installation
 
-### Quick Start (3 commands)
-
-```bash
-git clone https://github.com/YuzhengShi/FragPicker.git
-cd FragPicker && git checkout parallel-analysis
-pip install -r requirements.txt
-```
-
-### System Requirements
-
-- **OS**: Linux with kernel 2.6.28+ (for FIEMAP support)
-- **Python**: 3.8 or higher
-- **Filesystems**: ext4, XFS, F2FS, Btrfs (FIEMAP-compatible)
-- **Memory**: ~5.4KB per file analyzed
-
-### Dependencies
-
+### Prerequisites
 ```bash
 # Ubuntu/Debian
 sudo apt-get update
-sudo apt-get install -y python3 python3-pip e2fsprogs
+sudo apt-get install -y python3 python3-pip
 
-# Python packages (automatically installed)
-pip install -r requirements.txt
+# Required system packages
+sudo apt-get install -y e2fsprogs  # For filefrag (fallback)
 ```
 
----
-
-## Usage
-
-### Basic Analysis (Original Method)
-
+### Install FragPicker Parallel
 ```bash
-cd src/analysis
+# Clone repository
+git clone https://github.com/jonggyup/FragPicker.git
+cd FragPicker
+
+# Checkout parallel branch (or use main if merged)
+git checkout parallel-analysis
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Verify installation
+python src/analysis/processing.py --help
+```
+
+### Optional Dependencies
+```bash
+# For web dashboard
+pip install flask
+
+# For performance visualization
+pip install matplotlib numpy
+
+# For resource monitoring
+pip install psutil
+```
+
+## Quick Start
+
+### 1. Basic Usage (Sequential - Original)
+```bash
+cd FragPicker/src/analysis
+
+# Run analysis (original method)
 python processing.py
 ```
 
-### Parallel Analysis (Recommended)
-
+### 2. Parallel Analysis (Recommended)
 ```bash
-# Automatic optimization (recommended)
-python processing.py --parallel
-
-# Manual worker count
+# Run with parallel optimization
 python processing.py --parallel --workers 8
-
-# With performance profiling
-python processing.py --parallel --profile
 
 # With real-time dashboard
 python processing.py --parallel --dashboard
+
+# With performance profiling
+python processing.py --parallel --profile
 ```
 
-### Command-Line Options
+### 3. Benchmark Comparison
+```bash
+# Compare sequential vs parallel
+python processing.py --benchmark
+```
 
+## Usage
+
+### Command Line Options
 ```bash
 python processing.py [OPTIONS]
 
-Core Options:
-  --parallel              Enable parallel processing (auto-detects optimal config)
+Options:
+  --parallel              Enable parallel processing (up to 12.74x faster on slow I/O)
   --workers N             Number of worker threads (default: auto-detect)
-  --mount-point PATH      Filesystem mount point (default: /mnt)
-  
-Performance:
+  --mount-point PATH      Mount point to search (default: /mnt)
+  --dashboard             Enable real-time terminal dashboard
   --profile               Enable detailed performance profiling
-  --dashboard             Show real-time progress dashboard
   --benchmark             Compare sequential vs parallel performance
-  
-Configuration:
-  --config FILE           Load YAML configuration file
+  --config FILE           Load configuration from YAML file
   --quiet                 Suppress non-error output
 ```
 
-### Configuration File (Optional)
+### Configuration File
 
 Create `config/custom.yaml`:
-
 ```yaml
 parallel:
-  num_workers: 8              # Worker thread count
-  auto_detect_cores: true     # Auto-detect CPU cores
+  num_workers: 16
+  auto_detect_cores: true
 
 fiemap:
-  max_extents_per_call: 32    # FIEMAP batch size
-  retry_attempts: 3           # Retry on transient errors
+  max_extents_per_call: 32
+  retry_attempts: 3
 
 logging:
-  level: "INFO"               # DEBUG, INFO, WARNING, ERROR
-  file_path: "fragpicker.log" # Log file location
+  level: "DEBUG"
+  file_path: "/var/log/fragpicker.log"
 ```
 
-Then run:
+Then use:
 ```bash
 python processing.py --parallel --config config/custom.yaml
 ```
 
----
+### Integration with FragPicker Workflow
 
-## Architecture
-
-### What's New in Parallel Analysis
-
-| Component | Original | Enhanced | Benefit |
-|-----------|----------|----------|---------|
-| **Inode mapping** | N×`find` calls | 1×`find` call | O(N²) → O(N) complexity |
-| **Extent detection** | `filefrag` subprocess | Direct FIEMAP ioctl | No subprocess overhead |
-| **File processing** | Sequential loop | Parallel workers | 6.6x speedup on slow I/O |
-| **Correctness** | Assumed | Validated | 2,100+ files verified |
-
-### Directory Structure
-
-```
-FragPicker/
-├── src/analysis/parallel_analyzer/    # Parallel optimization modules
-│   ├── fiemap.py                      # Direct FIEMAP ioctl wrapper
-│   ├── inode_mapper.py                # Batch inode mapping (O(1) lookup)
-│   ├── parallel_processor.py          # Multi-threaded engine
-│   ├── multiprocess_processor.py      # Multiprocess engine (GIL bypass)
-│   ├── parallel_sorter.py             # Parallel sorting
-│   └── config.py, logger.py, ...     # Infrastructure
-│
-├── tests/                             # 70+ comprehensive tests
-│   ├── test_correctness.py            # Correctness validation
-│   ├── test_parallel.py               # Parallel processing tests
-│   ├── test_stress.py                 # Stress tests (5000 files)
-│   └── test_integration_e2e.py        # End-to-end workflows
-│
-├── benchmarks/                        # Performance measurement tools
-│   ├── speedup_benchmark.py           # Fast I/O benchmarks
-│   ├── speedup_slow_io_benchmark.py   # Slow I/O benchmarks
-│   ├── scalability_test.py            # Scalability analysis
-│   └── memory_profiler.py             # Memory profiling
-│
-└── PROJECT_REPORT.md                  # Comprehensive project report
-```
-
-### Core Components
-
-#### 1. FIEMAP ioctl Wrapper
-Direct kernel interface eliminates subprocess overhead:
-```python
-from parallel_analyzer.fiemap import FiemapAnalyzer
-
-analyzer = FiemapAnalyzer()
-extents = analyzer.get_extents('/path/to/file')
-# ~0.1ms (vs ~5-10ms for subprocess)
-```
-
-#### 2. Batch Inode Mapper
-Single `find` operation for entire filesystem:
-```python
-from parallel_analyzer.inode_mapper import build_inode_map
-
-inode_map = build_inode_map('/mnt')  # One find call
-filepath = inode_map[inode]          # O(1) lookup
-```
-
-#### 3. Parallel Processor
-Multi-threaded file processing with work-stealing queue:
-```python
-from parallel_analyzer.parallel_processor import EnhancedParallelProcessor
-
-processor = EnhancedParallelProcessor(num_workers=8)
-results = processor.process_files(file_list)
-```
-
----
-
-## Performance
-
-### Benchmark Results
-
-**Test Environment**: 4-core Intel CPU, NVMe SSD, ext4 filesystem
-
-#### Slow I/O Performance (Production Workloads)
-
-This is where parallel processing **truly shines**:
-
-| Workers | Time | Throughput | Speedup | Use Case |
-|---------|------|------------|---------|----------|
-| 1 (sequential) | 2.462s | 406 files/sec | 1.00x | Baseline |
-| 2 | 1.328s | 753 files/sec | 1.85x | Good scaling |
-| 4 | 0.640s | 1,562 files/sec | 3.85x | Excellent scaling |
-| 8 (threading) | 0.582s | 1,720 files/sec | **4.2x** | Best for threading |
-| 8 (multiprocess) | 0.369s | 2,873 files/sec | **6.6x** | **Best overall** |
-
-**Production scenarios**: HDD, network filesystems (NFS, SMB), cloud storage, fragmented disks
-
-#### Fast I/O Performance (Modern SSD)
-
-| Workers | Time | Throughput | Speedup | Notes |
-|---------|------|------------|---------|-------|
-| 1 (sequential) | 0.089s | 11,223 files/sec | 1.00x | **Optimal** |
-| 8 (parallel) | 0.237s | 4,215 files/sec | 0.38x | Threading overhead |
-
-**Why?** FIEMAP operations complete in microseconds on SSDs. Parallel overhead > work time.  
-**Solution**: Adaptive selection automatically uses sequential mode. 
-
-#### Scalability (Memory Efficiency)
-
-| File Count | Time | Throughput | Memory | Per-File |
-|------------|------|------------|--------|----------|
-| 100 | 0.037s | 2,782 files/sec | 0.13 MB | 1.3 KB |
-| 1,000 | 0.471s | 2,126 files/sec | 1.13 MB | 1.1 KB |
-| 5,000 | 2.485s | 2,013 files/sec | 8.25 MB | 1.7 KB |
-| 10,000 | 5.242s | 1,908 files/sec | 11.88 MB | 1.2 KB |
-
-**Memory scaling**: Linear, ~5.4KB per file average, no leaks detected 
-
-### Run Your Own Benchmarks
-
+The parallel analysis integrates seamlessly with FragPicker's workflow:
 ```bash
-# Quick comparison (2 minutes)
-python benchmarks/speedup_benchmark.py
-python benchmarks/speedup_slow_io_benchmark.py
-
-# Comprehensive analysis (10 minutes)
-python benchmarks/scalability_test.py --test all
-python benchmarks/memory_profiler.py
-
-# Custom benchmark
-python benchmarks/speedup_benchmark.py --files 1000 --workers 8
-```
-
----
-
-## Testing
-
-### Test Suite Overview
-
-**Total**: 70+ tests, all passing 
-
-```bash
-# Run all tests (takes ~2 minutes)
-python -m pytest tests/ -v
-
-# Quick validation (30 seconds)
-python tests/test_correctness.py
-
-# Specific test categories
-python tests/test_fiemap.py          # FIEMAP validation
-python tests/test_parallel.py        # Parallel processing
-python tests/test_correctness.py     # Correctness validation
-python tests/test_stress.py          # Stress tests (5000 files)
-python tests/test_integration_e2e.py # End-to-end workflows
-
-# With coverage report
-pytest tests/ --cov=src/analysis/parallel_analyzer --cov-report=html
-```
-
-### Correctness Validation
-
-**Byte-for-byte verification** ensures parallel output matches sequential:
-
-```
-100 files:     100/100 match (100% identical)
-1,000 files:   1,000/1,000 match (100% identical)
-Threading vs MP: 1,000/1,000 match (100% identical)
-───────────────────────────────────────────────────
-Total verified: 2,100+ files, 0 mismatches
-```
-
----
-
-## Integration with FragPicker Workflow
-
-The parallel enhancement integrates seamlessly into the original FragPicker workflow:
-
-```bash
+# Complete FragPicker workflow with parallel analysis
 cd FragPicker/src/analysis
 
 # 1. Trace I/O (unchanged)
 ./trace.sh <process_name> &
-sleep 60 && kill %1
+sleep 60  # Monitor for 60 seconds
+kill %1
 
 # 2. Parse trace data (unchanged)
 ./parse.sh
@@ -323,97 +211,236 @@ cd ../migration
 python FragPicker_OP.py  # or FragPicker_IP.py
 ```
 
----
+## Architecture
+
+### Directory Structure
+```
+FragPicker/
+├── src/
+│   ├── analysis/
+│   │   ├── processing.py              # Enhanced with --parallel option
+│   │   ├── parallel_analyzer/         # Parallel optimization modules
+│   │   │   ├── fiemap.py             # FIEMAP ioctl wrapper
+│   │   │   ├── inode_mapper.py       # Batch inode mapping
+│   │   │   ├── parallel_processor.py # Parallel engine
+│   │   │   ├── parallel_sorter.py    # Parallel sorting
+│   │   │   ├── progress_monitor.py   # Progress tracking
+│   │   │   └── performance_analyzer.py # Profiling
+│   │   └── ... (other analysis files)
+│   │
+│   └── migration/
+│       ├── FragPicker_OP.py           # Enhanced with FIEMAP
+│       └── FragPicker_IP.py           # Enhanced with FIEMAP
+│
+├── tests/
+│   ├── test_fiemap.py                 # FIEMAP tests
+│   ├── test_parallel.py               # Parallel tests
+│   ├── test_correctness.py            # Correctness validation
+│   ├── test_stress.py                 # Stress testing
+│   └── test_edge_cases.py             # Edge case testing
+│
+├── benchmarks/
+│   ├── speedup_benchmark.py           # Speedup measurement
+│   ├── scalability_test.py            # Scalability analysis
+│   ├── memory_profiler.py             # Memory profiling
+│   └── visualization.py               # Performance graphs
+│
+├── tools/
+│   ├── dashboard.py                   # Web/terminal dashboard
+│   ├── analyzer.py                    # Result analysis
+│   └── profiler.py                    # Interactive profiler
+│
+└── config/
+    └── default.yaml                   # Default configuration
+```
+
+### Key Components
+
+#### 1. FIEMAP ioctl Wrapper (`fiemap.py`)
+
+Direct kernel interface for extent detection:
+```python
+from parallel_analyzer.fiemap import FiemapAnalyzer
+
+analyzer = FiemapAnalyzer()
+extents = analyzer.get_extents('/path/to/file')
+# Returns extent list in ~0.1ms (vs ~5-10ms for subprocess)
+```
+
+#### 2. Batch Inode Mapper (`inode_mapper.py`)
+
+Single find command for all files:
+```python
+from parallel_analyzer.inode_mapper import build_inode_map
+
+# One find call for entire filesystem
+inode_map = build_inode_map('/mnt')
+filepath = inode_map[inode]  # O(1) lookup
+```
+
+#### 3. Parallel Processor (`parallel_processor.py`)
+
+Multi-threaded file processing:
+```python
+from parallel_analyzer.parallel_processor import EnhancedParallelProcessor
+
+processor = EnhancedParallelProcessor(num_workers=8)
+results = processor.process_files(file_list)
+```
+
+## Performance
+
+### Benchmark Results
+
+Tested on: 4-core Intel CPU, NVMe SSD, ext4 filesystem
+
+#### Strong Scaling (10,000 files)
+
+| Workers | Time | Speedup | Efficiency |
+|---------|------|---------|------------|
+| 1 (seq) | 45.2s | 1.0x | 100% |
+| 2 | 24.1s | 1.9x | 95% |
+| 4 | 13.5s | 3.3x | 83% |
+| 8 | 11.8s | 3.8x | 48% |
+
+#### Component Breakdown
+
+| Optimization | Actual Benefit |
+|--------------|--------------|
+| Batch inode mapping | O(N²) → O(N) complexity |
+| Direct FIEMAP ioctl | Eliminates subprocess overhead |
+| Parallel threading | 12.74x speedup (16 workers, slow I/O) |
+| Parallel multiprocessing | 12.55x speedup (16 workers, slow I/O) |
+| Adaptive worker selection | Optimal for all storage types |
+
+**Measured Results** (1000 files, 5ms latency simulation):
+- Sequential: 7.28s baseline
+- Threading (8 workers): 0.86s (8.44x speedup)
+- Threading (16 workers): 0.57s (12.74x speedup)
+- Multiprocessing (16 workers): 0.58s (12.55x speedup)
+
+### Run Your Own Benchmarks
+```bash
+# Quick benchmark
+python benchmarks/speedup_benchmark.py --files 1000 --workers 8
+
+# Comprehensive scalability test
+python benchmarks/scalability_test.py --test all
+
+# Slow I/O simulation (shows best speedup)
+python benchmarks/speedup_slow_io_benchmark.py
+
+# Memory profiling
+python benchmarks/memory_profiler.py
+```
+
+## Testing
+
+### Test Environment
+
+All tests and benchmarks were executed inside a dedicated VirtualBox VM:
+
+- **VM name**: `CS5600VM`
+- **OS**: Ubuntu 22.04 LTS (64-bit)
+- **vCPUs**: 4
+- **Memory**: 8 GB
+- **Disk**: 20 GB virtual disk on NVMe SSD host
+
+This environment matches the course-provided CS5600 VM configuration.
+
+### Run Test Suite
+```bash
+# All tests
+pytest tests/ -v
+
+# Specific test categories
+pytest tests/test_fiemap.py          # FIEMAP tests
+pytest tests/test_parallel.py        # Parallel processing
+pytest tests/test_correctness.py     # Correctness validation
+pytest tests/test_stress.py          # Stress tests (10K+ files)
+
+# With coverage report
+pytest tests/ --cov=src/analysis/parallel_analyzer --cov-report=html
+```
+
+### Correctness Validation
+
+Ensure parallel results match sequential:
+```bash
+python tests/test_correctness.py
+```
+
+### Stress Testing
+
+Test with large-scale workloads:
+```bash
+python tests/test_stress.py
+# Creates 10,000 test files and validates performance
+```
+
+
+### Quick References
+```bash
+# View FIEMAP statistics
+python -c "
+from parallel_analyzer.fiemap import FiemapAnalyzer
+analyzer = FiemapAnalyzer()
+extents = analyzer.get_extents('/tmp/test.dat')
+print(f'Extents: {len(extents)}')
+analyzer.print_stats()
+"
+
+# Analyze results
+python tools/analyzer.py --filelist ./filelist.txt
+
+# Interactive profiler
+python tools/profiler.py --interactive
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Issue**: `FIEMAP not supported`
-- **Cause**: Filesystem doesn't support FIEMAP ioctl
-- **Solution**: Automatically falls back to `filefrag` subprocess
-- **Supported**: ext4, XFS, F2FS, Btrfs
+**Issue: "FIEMAP not supported"**
+- FIEMAP requires Linux kernel 2.6.28+
+- Not all filesystems support FIEMAP (ext4, F2FS, XFS work)
+- Solution: Falls back to subprocess automatically
 
-**Issue**: `Permission denied`
+**Issue: "Permission denied"**
 ```bash
 sudo python processing.py --parallel
 ```
 
-**Issue**: `Module not found: parallel_analyzer`
+**Issue: "Module not found: parallel_analyzer"**
 ```bash
-# Ensure correct directory
+# Ensure you're in the correct directory
 cd FragPicker/src/analysis
 python processing.py --parallel
 ```
 
-**Issue**: Parallel mode not faster than sequential
-- Check if running on modern SSD (adaptive selection should use 1 worker)
-- Verify CPU core count: `--workers` should match available cores
-- Check storage type: HDD/network benefits most from parallelism
-- Monitor resources: `python tools/profiler.py --demo`
+### Performance Issues
+
+If parallel mode is not faster:
+
+1. Check if running on VM with limited cores
+2. Verify SSD/NVMe storage (HDD bottleneck)
+3. Try different worker counts: `--workers 2` or `--workers 16`
+4. Check resource usage: `python tools/profiler.py --demo`
+
+
+
+## Acknowledgments
+
+- **Original FragPicker**: Jonggyu Park et al. (SOSP '21)
+- **Parallel Enhancement**: CS5600 Project, Northeastern University
+
+
 
 ---
 
-## Documentation
+**Original Paper**: [FragPicker: A New Defragmentation Tool for Modern Storage Devices](https://dl.acm.org/doi/10.1145/3477132.3483593)
 
-- **[PROJECT_REPORT.md](PROJECT_REPORT.md)**: Comprehensive project report with all performance data
-- **[README.md](README.md)**: This file - user guide and quick reference
-- **Code Comments**: Inline documentation throughout codebase
+**Performance**: Up to 12.74x faster analysis (slow I/O) | 35,000+ files/sec throughput (fast I/O) | Linear memory scaling (1.2KB/file)
 
----
+**Validated**: 100% byte-for-byte correctness (2,100+ file verification) | 70+ passing tests | Production-ready
 
-## Origin and Credits
-
-This repository is a **fork** of the original FragPicker project:
-
-- **Original Authors**: Jonggyu Park et al. (SOSP '21)
-- **Original Paper**: [FragPicker: A New Defragmentation Tool for Modern Storage Devices](https://dl.acm.org/doi/10.1145/3477132.3483593)
-- **Original Repository**: https://github.com/jonggyup/FragPicker
-- **License**: MIT License
-
-### Parallel Enhancement
-
-- **Author**: Yuzheng Shi
-- **Institution**: Northeastern University
-- **Course**: CS5600 - Computer Systems
-- **Date**: November 2025
-- **License**: MIT License (same as original)
-
-All original FragPicker code is © 2021 Jonggyu Park and contributors.  
-All parallel enhancement code is © 2025 Yuzheng Shi.
-
-This branch (`parallel-analysis`) **does not reimplement FragPicker from scratch**. It extends the original implementation with parallel processing optimizations while preserving all original functionality.
-
----
-
-## Summary
-
-### Performance
-- **6.6x speedup** on slow I/O (production workloads)
-- **1,900+ files/sec** throughput on HDD with 8 workers
-- **Linear memory scaling** at 5.4KB per file
-
-### Quality
-- **100% correctness** validated (2,100+ files)
-- **70+ passing tests** (unit, integration, stress, benchmarks)
-- **Production-ready** with comprehensive error handling
-
-### Compatibility
-- **100% backward compatible** with original FragPicker
-- **Adaptive optimization** works optimally on all storage types
-- **Zero configuration** required for most use cases
-
----
-
-## License
-
-MIT License - See [LICENSE](LICENSE) file for details.
-
-**Original FragPicker**: © 2021 Jonggyu Park et al.  
-**Parallel Enhancement**: © 2025 Yuzheng Shi
-
----
-
-**Repository**: https://github.com/YuzhengShi/FragPicker/tree/parallel-analysis  
-**Report**: [PROJECT_REPORT.md](PROJECT_REPORT.md)  
-**Tests**: 70+ passing | **Performance**: 6.6x speedup | **Memory**: 5.4KB/file
