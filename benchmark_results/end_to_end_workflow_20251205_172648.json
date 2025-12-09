@@ -1,0 +1,162 @@
+{
+  "timestamp": "2025-12-05T17:26:48.816144",
+  "configuration": {
+    "num_files": 1000,
+    "file_size_kb": 100,
+    "num_runs": 3
+  },
+  "results": [
+    {
+      "run_number": 1,
+      "sequential": {
+        "timing": {
+          "inode_mapping": 0.007869243621826172,
+          "file_processing": 0.03592729568481445,
+          "sorting": 0.0002448558807373047,
+          "total": 0.04404139518737793
+        },
+        "files_processed": 1000,
+        "throughput": 22705.91101270551
+      },
+      "parallel_threading": {
+        "timing": {
+          "inode_mapping": 0.009572982788085938,
+          "file_processing": 0.4035181999206543,
+          "sorting": 7.152557373046875e-07,
+          "total": 0.41309189796447754
+        },
+        "files_processed": 1000,
+        "throughput": 2481.641385618765
+      },
+      "parallel_multiprocessing": {
+        "timing": {
+          "inode_mapping": 0.008760213851928711,
+          "file_processing": 0.16608619689941406,
+          "sorting": 7.152557373046875e-07,
+          "total": 0.17484712600708008
+        },
+        "files_processed": 1000,
+        "throughput": 6062.718716889823
+      }
+    },
+    {
+      "run_number": 2,
+      "sequential": {
+        "timing": {
+          "inode_mapping": 0.009361028671264648,
+          "file_processing": 0.032834529876708984,
+          "sorting": 0.0003440380096435547,
+          "total": 0.04253959655761719
+        },
+        "files_processed": 1000,
+        "throughput": 23507.510200421468
+      },
+      "parallel_threading": {
+        "timing": {
+          "inode_mapping": 0.009002447128295898,
+          "file_processing": 0.43756628036499023,
+          "sorting": 4.76837158203125e-07,
+          "total": 0.44656920433044434
+        },
+        "files_processed": 1000,
+        "throughput": 2289.3247909245824
+      },
+      "parallel_multiprocessing": {
+        "timing": {
+          "inode_mapping": 0.007297992706298828,
+          "file_processing": 0.1670992374420166,
+          "sorting": 1.1920928955078125e-06,
+          "total": 0.17439842224121094
+        },
+        "files_processed": 1000,
+        "throughput": 6048.712109959173
+      }
+    },
+    {
+      "run_number": 3,
+      "sequential": {
+        "timing": {
+          "inode_mapping": 0.008254766464233398,
+          "file_processing": 0.03177952766418457,
+          "sorting": 0.0005269050598144531,
+          "total": 0.04056119918823242
+        },
+        "files_processed": 1000,
+        "throughput": 24654.103429223047
+      },
+      "parallel_threading": {
+        "timing": {
+          "inode_mapping": 0.008182048797607422,
+          "file_processing": 0.4855024814605713,
+          "sorting": 9.5367431640625e-07,
+          "total": 0.4936854839324951
+        },
+        "files_processed": 1000,
+        "throughput": 2062.38026867022
+      },
+      "parallel_multiprocessing": {
+        "timing": {
+          "inode_mapping": 0.009589910507202148,
+          "file_processing": 0.17354726791381836,
+          "sorting": 9.5367431640625e-07,
+          "total": 0.18313813209533691
+        },
+        "files_processed": 1000,
+        "throughput": 5846.689555480281
+      }
+    }
+  ],
+  "averages": {
+    "sequential": {
+      "timing": {
+        "inode_mapping": 0.008495012919108072,
+        "file_processing": 0.033513784408569336,
+        "sorting": 0.0003719329833984375,
+        "total": 0.042380730311075844
+      }
+    },
+    "parallel_threading": {
+      "timing": {
+        "inode_mapping": 0.008919159571329752,
+        "file_processing": 0.4421956539154053,
+        "sorting": 7.152557373046875e-07,
+        "total": 0.45111552874247235
+      },
+      "speedup": 0.09394651172664391
+    },
+    "parallel_multiprocessing": {
+      "timing": {
+        "inode_mapping": 0.008549372355143229,
+        "file_processing": 0.16891090075174967,
+        "sorting": 9.5367431640625e-07,
+        "total": 0.17746122678120932
+      },
+      "speedup": 0.23881684512035264
+    }
+  },
+  "summary": {
+    "total_speedup": {
+      "threading": 0.09394651172664391,
+      "multiprocessing": 0.23881684512035264
+    },
+    "stage_improvements": {
+      "inode_mapping": {
+        "sequential": 0.008495012919108072,
+        "parallel": 0.008919159571329752,
+        "improvement": -4.992890019833103
+      },
+      "file_processing": {
+        "sequential": 0.033513784408569336,
+        "parallel_threading": 0.4421956539154053,
+        "parallel_multiprocessing": 0.16891090075174967,
+        "threading_speedup": 0.07578949298081687,
+        "multiprocessing_speedup": 0.1984110217837565
+      },
+      "sorting": {
+        "sequential": 0.0003719329833984375,
+        "parallel": 7.152557373046875e-07,
+        "speedup": 520.0
+      }
+    }
+  }
+}
