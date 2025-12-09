@@ -218,40 +218,60 @@ python FragPicker_OP.py  # or FragPicker_IP.py
 FragPicker/
 ├── src/
 │   ├── analysis/
-│   │   ├── processing.py              # Enhanced with --parallel option
-│   │   ├── parallel_analyzer/         # Parallel optimization modules
-│   │   │   ├── fiemap.py             # FIEMAP ioctl wrapper
-│   │   │   ├── inode_mapper.py       # Batch inode mapping
-│   │   │   ├── parallel_processor.py # Parallel engine
-│   │   │   ├── parallel_sorter.py    # Parallel sorting
-│   │   │   ├── progress_monitor.py   # Progress tracking
-│   │   │   └── performance_analyzer.py # Profiling
+│   │   ├── processing.py                   # Enhanced with --parallel option
+│   │   ├── parallel_analyzer/              # Parallel optimization modules
+│   │   │   ├── fiemap.py                  # FIEMAP ioctl wrapper
+│   │   │   ├── inode_mapper.py            # Batch inode mapping
+│   │   │   ├── parallel_processor.py      # Multi-threaded engine
+│   │   │   ├── multiprocess_processor.py  # Multiprocess engine
+│   │   │   ├── parallel_sorter.py         # Parallel sorting
+│   │   │   ├── progress_monitor.py        # Progress tracking
+│   │   │   ├── performance_analyzer.py    # Profiling
+│   │   │   ├── logger.py                  # Structured logging
+│   │   │   └── config.py                  # Configuration management
 │   │   └── ... (other analysis files)
 │   │
 │   └── migration/
-│       ├── FragPicker_OP.py           # Enhanced with FIEMAP
-│       └── FragPicker_IP.py           # Enhanced with FIEMAP
+│       ├── FragPicker_OP.py                # Enhanced with FIEMAP
+│       └── FragPicker_IP.py                # Enhanced with FIEMAP
 │
 ├── tests/
-│   ├── test_fiemap.py                 # FIEMAP tests
-│   ├── test_parallel.py               # Parallel tests
-│   ├── test_correctness.py            # Correctness validation
-│   ├── test_stress.py                 # Stress testing
-│   └── test_edge_cases.py             # Edge case testing
+│   ├── test_fiemap.py                      # FIEMAP tests
+│   ├── test_parallel.py                    # Parallel tests
+│   ├── test_correctness.py                 # Correctness validation
+│   ├── test_correctness_validation.py      # Extended correctness tests
+│   ├── test_multiprocess_comparison.py     # Threading vs multiprocess
+│   ├── test_stress.py                      # Stress testing
+│   ├── test_stress_slow_io.py              # Slow I/O stress tests
+│   ├── test_slow_io_proof.py               # Slow I/O speedup proof
+│   ├── test_adaptive_parallelism.py        # Adaptive selection tests
+│   ├── test_sorting_verification.py        # Sorting correctness
+│   ├── test_edge_cases.py                  # Edge case testing
+│   ├── test_filesystem_compatibility.py    # Filesystem support
+│   ├── test_realistic_workload.py          # Real-world workload tests
+│   └── test_integration_e2e.py             # End-to-end integration
 │
 ├── benchmarks/
-│   ├── speedup_benchmark.py           # Speedup measurement
-│   ├── scalability_test.py            # Scalability analysis
-│   ├── memory_profiler.py             # Memory profiling
-│   └── visualization.py               # Performance graphs
+│   ├── speedup_benchmark.py                # Speedup measurement
+│   ├── speedup_slow_io_benchmark.py        # Slow I/O speedup
+│   ├── scalability_test.py                 # Scalability analysis
+│   ├── scalability_slow_io_test.py         # Slow I/O scalability
+│   ├── memory_profiler.py                  # Memory profiling
+│   ├── overhead_profiling_benchmark.py     # Overhead analysis
+│   ├── fragmentation_impact_benchmark.py   # Fragmentation impact
+│   ├── workload_threshold_benchmark.py     # Workload threshold
+│   ├── end_to_end_workflow_benchmark.py    # End-to-end workflow
+│   ├── analyze_fragmentation.py            # Fragmentation analysis
+│   ├── visualization.py                    # Performance graphs
+│   └── enhanced_visualizations.py          # Advanced visualizations
 │
 ├── tools/
-│   ├── dashboard.py                   # Web/terminal dashboard
-│   ├── analyzer.py                    # Result analysis
-│   └── profiler.py                    # Interactive profiler
+│   ├── dashboard.py                        # Web/terminal dashboard
+│   ├── analyzer.py                         # Result analysis
+│   └── profiler.py                         # Interactive profiler
 │
 └── config/
-    └── default.yaml                   # Default configuration
+    └── default.yaml                        # Default configuration
 ```
 
 ### Key Components
@@ -332,6 +352,13 @@ python benchmarks/speedup_slow_io_benchmark.py
 
 # Memory profiling
 python benchmarks/memory_profiler.py
+
+# Additional benchmarks
+python benchmarks/overhead_profiling_benchmark.py  # Overhead analysis
+python benchmarks/fragmentation_impact_benchmark.py  # Fragmentation impact
+python benchmarks/workload_threshold_benchmark.py  # Workload threshold
+python benchmarks/end_to_end_workflow_benchmark.py  # End-to-end workflow
+python benchmarks/analyze_fragmentation.py  # Fragmentation analysis
 ```
 
 ## Testing
