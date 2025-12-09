@@ -1,0 +1,580 @@
+{
+  "timestamp": "2025-12-05T17:17:30.183104",
+  "configuration": {
+    "file_size_mb": 10,
+    "num_files_per_level": 20,
+    "num_runs": 3,
+    "fragmentation_levels": [
+      {
+        "extents": 1,
+        "label": "clean"
+      },
+      {
+        "extents": 10,
+        "label": "light"
+      },
+      {
+        "extents": 50,
+        "label": "moderate"
+      },
+      {
+        "extents": 100,
+        "label": "heavy"
+      },
+      {
+        "extents": 500,
+        "label": "extreme"
+      }
+    ]
+  },
+  "results": [
+    {
+      "target_extents": 1,
+      "label": "clean",
+      "num_files": 20,
+      "file_size_mb": 10,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0006630420684814453,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 20,
+              "files_per_second": 30163.998561668464
+            }
+          },
+          "parallel_threading": {
+            "time": 0.02073383331298828,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 964.6069638011131,
+              "workers": 8
+            },
+            "speedup": 0.031978749827514835
+          },
+          "parallel_multiprocessing": {
+            "time": 0.09860563278198242,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 202.82816950447554,
+              "workers": 8
+            },
+            "speedup": 0.006724180452727633
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0008513927459716797,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 20,
+              "files_per_second": 23490.921310557267
+            }
+          },
+          "parallel_threading": {
+            "time": 0.019035816192626953,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 1050.6510357956965,
+              "workers": 8
+            },
+            "speedup": 0.04472583352120438
+          },
+          "parallel_multiprocessing": {
+            "time": 0.06096053123474121,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 328.0811304446452,
+              "workers": 8
+            },
+            "speedup": 0.013966294727537966
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0018129348754882812,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 20,
+              "files_per_second": 11031.835875854813
+            }
+          },
+          "parallel_threading": {
+            "time": 0.027599096298217773,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 724.6614086161767,
+              "workers": 8
+            },
+            "speedup": 0.06568819703003655
+          },
+          "parallel_multiprocessing": {
+            "time": 0.05388927459716797,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 371.1313642557559,
+              "workers": 8
+            },
+            "speedup": 0.03364184968234024
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0011091232299804688,
+        "threading_time": 0.022456248601277668,
+        "multiprocessing_time": 0.0711518128712972,
+        "threading_speedup": 0.04939040574735017,
+        "multiprocessing_speedup": 0.015588123270825214
+      }
+    },
+    {
+      "target_extents": 10,
+      "label": "light",
+      "num_files": 20,
+      "file_size_mb": 10,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.001088857650756836,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 80,
+              "files_per_second": 18367.873877819136
+            }
+          },
+          "parallel_threading": {
+            "time": 0.024020910263061523,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 832.607914561642,
+              "workers": 8
+            },
+            "speedup": 0.0453295748925569
+          },
+          "parallel_multiprocessing": {
+            "time": 0.07189416885375977,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 278.1866779861116,
+              "workers": 8
+            },
+            "speedup": 0.015145284633190292
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0015163421630859375,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 80,
+              "files_per_second": 13189.635220125787
+            }
+          },
+          "parallel_threading": {
+            "time": 0.01820850372314453,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 1098.3878908500496,
+              "workers": 8
+            },
+            "speedup": 0.08327659351594825
+          },
+          "parallel_multiprocessing": {
+            "time": 0.07794618606567383,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 256.5872816810938,
+              "workers": 8
+            },
+            "speedup": 0.019453705686232527
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0009870529174804688,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 80,
+              "files_per_second": 20262.338164251207
+            }
+          },
+          "parallel_threading": {
+            "time": 0.02034735679626465,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 982.9286526135711,
+              "workers": 8
+            },
+            "speedup": 0.04851012971186858
+          },
+          "parallel_multiprocessing": {
+            "time": 0.0659787654876709,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 303.1278298733445,
+              "workers": 8
+            },
+            "speedup": 0.014960160442300396
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0011974175771077473,
+        "threading_time": 0.020858923594156902,
+        "multiprocessing_time": 0.07193970680236816,
+        "threading_speedup": 0.057405530621109015,
+        "multiprocessing_speedup": 0.016644738077641566
+      }
+    },
+    {
+      "target_extents": 50,
+      "label": "moderate",
+      "num_files": 20,
+      "file_size_mb": 10,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0012655258178710938,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 86,
+              "files_per_second": 15803.707611152977
+            }
+          },
+          "parallel_threading": {
+            "time": 0.029976844787597656,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 667.1816244074698,
+              "workers": 8
+            },
+            "speedup": 0.04221677854484141
+          },
+          "parallel_multiprocessing": {
+            "time": 0.07555079460144043,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 264.7225632173389,
+              "workers": 8
+            },
+            "speedup": 0.016750661916227757
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0006642341613769531,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 86,
+              "files_per_second": 30109.86360373295
+            }
+          },
+          "parallel_threading": {
+            "time": 0.015363931655883789,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 1301.750128024084,
+              "workers": 8
+            },
+            "speedup": 0.04323334523052094
+          },
+          "parallel_multiprocessing": {
+            "time": 0.12436556816101074,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 160.816215418297,
+              "workers": 8
+            },
+            "speedup": 0.005340981199209397
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0022525787353515625,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 86,
+              "files_per_second": 8878.712955122777
+            }
+          },
+          "parallel_threading": {
+            "time": 0.020240068435668945,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 988.1389513858622,
+              "workers": 8
+            },
+            "speedup": 0.11129303947321922
+          },
+          "parallel_multiprocessing": {
+            "time": 0.07444548606872559,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 268.6529574343388,
+              "workers": 8
+            },
+            "speedup": 0.030258096955295008
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0013941129048665364,
+        "threading_time": 0.021860281626383465,
+        "multiprocessing_time": 0.09145394961039226,
+        "threading_speedup": 0.06377378520064275,
+        "multiprocessing_speedup": 0.015243878594698966
+      }
+    },
+    {
+      "target_extents": 100,
+      "label": "heavy",
+      "num_files": 20,
+      "file_size_mb": 10,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.000850677490234375,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 85,
+              "files_per_second": 23510.67264573991
+            }
+          },
+          "parallel_threading": {
+            "time": 0.02715301513671875,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 736.5664512503512,
+              "workers": 8
+            },
+            "speedup": 0.03132902500702445
+          },
+          "parallel_multiprocessing": {
+            "time": 0.06115913391113281,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 327.01574925931703,
+              "workers": 8
+            },
+            "speedup": 0.013909246842351473
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0006766319274902344,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 85,
+              "files_per_second": 29558.16772374912
+            }
+          },
+          "parallel_threading": {
+            "time": 0.02739429473876953,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 730.0790252393385,
+              "workers": 8
+            },
+            "speedup": 0.024699738903394258
+          },
+          "parallel_multiprocessing": {
+            "time": 0.08376216888427734,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 238.77127665630587,
+              "workers": 8
+            },
+            "speedup": 0.008078013457663012
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.000762939453125,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 85,
+              "files_per_second": 26214.4
+            }
+          },
+          "parallel_threading": {
+            "time": 0.023935794830322266,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 835.5686594816424,
+              "workers": 8
+            },
+            "speedup": 0.03187441480566568
+          },
+          "parallel_multiprocessing": {
+            "time": 0.07346153259277344,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 272.25133065039597,
+              "workers": 8
+            },
+            "speedup": 0.010385564065948332
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0007634162902832031,
+        "threading_time": 0.026161034901936848,
+        "multiprocessing_time": 0.07279427846272786,
+        "threading_speedup": 0.029181425472838734,
+        "multiprocessing_speedup": 0.010487311728408541
+      }
+    },
+    {
+      "target_extents": 500,
+      "label": "extreme",
+      "num_files": 20,
+      "file_size_mb": 10,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0021064281463623047,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 139,
+              "files_per_second": 9494.745897000566
+            }
+          },
+          "parallel_threading": {
+            "time": 0.027601003646850586,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 724.6113313811362,
+              "workers": 8
+            },
+            "speedup": 0.07631708517971443
+          },
+          "parallel_multiprocessing": {
+            "time": 0.12175822257995605,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 164.25995367061492,
+              "workers": 8
+            },
+            "speedup": 0.017300089486597572
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0008392333984375,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 139,
+              "files_per_second": 23831.272727272728
+            }
+          },
+          "parallel_threading": {
+            "time": 0.03284859657287598,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 608.8540177242936,
+              "workers": 8
+            },
+            "speedup": 0.02554853132235424
+          },
+          "parallel_multiprocessing": {
+            "time": 0.06854915618896484,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 291.76143240723997,
+              "workers": 8
+            },
+            "speedup": 0.012242796922606046
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0007674694061279297,
+            "stats": {
+              "files_processed": 20,
+              "total_extents": 139,
+              "files_per_second": 26059.670705187946
+            }
+          },
+          "parallel_threading": {
+            "time": 0.018162250518798828,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 1101.1851190632467,
+              "workers": 8
+            },
+            "speedup": 0.04225629446821917
+          },
+          "parallel_multiprocessing": {
+            "time": 0.09106636047363281,
+            "stats": {
+              "files_processed": 20,
+              "files_per_second": 219.62006492826475,
+              "workers": 8
+            },
+            "speedup": 0.008427584040213635
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0012377103169759114,
+        "threading_time": 0.02620395024617513,
+        "multiprocessing_time": 0.09379124641418457,
+        "threading_speedup": 0.04723373023334809,
+        "multiprocessing_speedup": 0.013196437453343467
+      }
+    }
+  ],
+  "summary": {
+    "key_findings": [
+      "Best threading speedup: 0.06x at 50 extents",
+      "Best multiprocessing speedup: 0.02x at 10 extents"
+    ],
+    "speedup_by_fragmentation": [
+      {
+        "extents": 1,
+        "label": "clean",
+        "threading_speedup": 0.04939040574735017,
+        "multiprocessing_speedup": 0.015588123270825214
+      },
+      {
+        "extents": 10,
+        "label": "light",
+        "threading_speedup": 0.057405530621109015,
+        "multiprocessing_speedup": 0.016644738077641566
+      },
+      {
+        "extents": 50,
+        "label": "moderate",
+        "threading_speedup": 0.06377378520064275,
+        "multiprocessing_speedup": 0.015243878594698966
+      },
+      {
+        "extents": 100,
+        "label": "heavy",
+        "threading_speedup": 0.029181425472838734,
+        "multiprocessing_speedup": 0.010487311728408541
+      },
+      {
+        "extents": 500,
+        "label": "extreme",
+        "threading_speedup": 0.04723373023334809,
+        "multiprocessing_speedup": 0.013196437453343467
+      }
+    ]
+  }
+}

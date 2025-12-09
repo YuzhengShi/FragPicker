@@ -1,0 +1,1292 @@
+{
+  "timestamp": "2025-12-05T17:22:33.524417",
+  "configuration": {
+    "file_size_kb": 100,
+    "file_counts": [
+      10,
+      50,
+      100,
+      200,
+      500,
+      1000,
+      2000,
+      5000
+    ],
+    "worker_counts": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "num_runs": 3
+  },
+  "results": [
+    {
+      "num_files": 10,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0011029243469238281,
+            "stats": {
+              "files_processed": 10,
+              "files_per_second": 9066.805015131864
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.020348072052001953,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 491.44705082839266,
+                "workers": 2
+              },
+              "speedup": 0.054202891758254636,
+              "efficiency": 0.027101445879127318
+            },
+            "4": {
+              "time": 0.008336305618286133,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 1199.5721435721437,
+                "workers": 4
+              },
+              "speedup": 0.1323037323037323,
+              "efficiency": 0.033075933075933074
+            },
+            "8": {
+              "time": 0.03638815879821777,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 274.81467406616304,
+                "workers": 8
+              },
+              "speedup": 0.030309979491950755,
+              "efficiency": 0.0037887474364938444
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0003101825714111328,
+            "stats": {
+              "files_processed": 10,
+              "files_per_second": 32239.077632590313
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.009685516357421875,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 1032.4694761717212,
+                "workers": 2
+              },
+              "speedup": 0.03202540370224498,
+              "efficiency": 0.01601270185112249
+            },
+            "4": {
+              "time": 0.007488250732421875,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 1335.425369332654,
+                "workers": 4
+              },
+              "speedup": 0.04142256749872644,
+              "efficiency": 0.01035564187468161
+            },
+            "8": {
+              "time": 0.018367528915405273,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 544.4390503511208,
+                "workers": 8
+              },
+              "speedup": 0.016887550461454588,
+              "efficiency": 0.0021109438076818234
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0009758472442626953,
+            "stats": {
+              "files_processed": 10,
+              "files_per_second": 10247.505497190325
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.010149002075195312,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 985.3185491448976,
+                "workers": 2
+              },
+              "speedup": 0.09615203909039655,
+              "efficiency": 0.04807601954519827
+            },
+            "4": {
+              "time": 0.006024360656738281,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 1659.9271806237139,
+                "workers": 4
+              },
+              "speedup": 0.16198353648883965,
+              "efficiency": 0.04049588412220991
+            },
+            "8": {
+              "time": 0.015166282653808594,
+              "stats": {
+                "files_processed": 10,
+                "files_per_second": 659.3573539583726,
+                "workers": 8
+              },
+              "speedup": 0.06434320568446206,
+              "efficiency": 0.008042900710557757
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0007963180541992188,
+        "parallel": {
+          "2": {
+            "time": 0.01339419682820638,
+            "speedup": 0.06079344485029872,
+            "efficiency": 0.03039672242514936
+          },
+          "4": {
+            "time": 0.00728297233581543,
+            "speedup": 0.11190327876376611,
+            "efficiency": 0.02797581969094153
+          },
+          "8": {
+            "time": 0.023307323455810547,
+            "speedup": 0.03718024521262247,
+            "efficiency": 0.004647530651577809
+          }
+        }
+      }
+    },
+    {
+      "num_files": 50,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0013446807861328125,
+            "stats": {
+              "files_processed": 50,
+              "files_per_second": 37183.54609929078
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.016399383544921875,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 3048.895091881833,
+                "workers": 2
+              },
+              "speedup": 0.08199581297976273,
+              "efficiency": 0.040997906489881365
+            },
+            "4": {
+              "time": 0.032154083251953125,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 1555.0124569937122,
+                "workers": 4
+              },
+              "speedup": 0.041819907462332426,
+              "efficiency": 0.010454976865583106
+            },
+            "8": {
+              "time": 0.01536250114440918,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 3254.6783580352294,
+                "workers": 8
+              },
+              "speedup": 0.08753006906184527,
+              "efficiency": 0.010941258632730658
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.0011355876922607422,
+            "stats": {
+              "files_processed": 50,
+              "files_per_second": 44030.065085030445
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.014791011810302734,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 3380.4313485283215,
+                "workers": 2
+              },
+              "speedup": 0.0767755246784229,
+              "efficiency": 0.03838776233921145
+            },
+            "4": {
+              "time": 0.013508796691894531,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 3701.291916696082,
+                "workers": 4
+              },
+              "speedup": 0.08406283092128486,
+              "efficiency": 0.021015707730321215
+            },
+            "8": {
+              "time": 0.018181324005126953,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 2750.0747462561303,
+                "workers": 8
+              },
+              "speedup": 0.062459020692910906,
+              "efficiency": 0.007807377586613863
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.002409696578979492,
+            "stats": {
+              "files_processed": 50,
+              "files_per_second": 20749.500346294648
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.02175736427307129,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 2298.0724766319295,
+                "workers": 2
+              },
+              "speedup": 0.1107531477037378,
+              "efficiency": 0.0553765738518689
+            },
+            "4": {
+              "time": 0.02013707160949707,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 2482.982678395946,
+                "workers": 4
+              },
+              "speedup": 0.11966469731592096,
+              "efficiency": 0.02991617432898024
+            },
+            "8": {
+              "time": 0.02122187614440918,
+              "stats": {
+                "files_processed": 50,
+                "files_per_second": 2356.059363449461,
+                "workers": 8
+              },
+              "speedup": 0.11354776375953533,
+              "efficiency": 0.014193470469941917
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.0016299883524576824,
+        "parallel": {
+          "2": {
+            "time": 0.017649253209431965,
+            "speedup": 0.08984149512064114,
+            "efficiency": 0.04492074756032057
+          },
+          "4": {
+            "time": 0.021933317184448242,
+            "speedup": 0.08184914523317942,
+            "efficiency": 0.020462286308294855
+          },
+          "8": {
+            "time": 0.018255233764648438,
+            "speedup": 0.08784561783809718,
+            "efficiency": 0.010980702229762147
+          }
+        }
+      }
+    },
+    {
+      "num_files": 100,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.0028460025787353516,
+            "stats": {
+              "files_processed": 100,
+              "files_per_second": 35137.00259696741
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.02760004997253418,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 3623.1818456674414,
+                "workers": 2
+              },
+              "speedup": 0.10311584875996649,
+              "efficiency": 0.051557924379983244
+            },
+            "4": {
+              "time": 0.04312396049499512,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 2318.8964754664826,
+                "workers": 4
+              },
+              "speedup": 0.06599585348997927,
+              "efficiency": 0.016498963372494818
+            },
+            "8": {
+              "time": 0.03804302215576172,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 2628.6029430197286,
+                "workers": 8
+              },
+              "speedup": 0.07481010754305482,
+              "efficiency": 0.009351263442881853
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.004354715347290039,
+            "stats": {
+              "files_processed": 100,
+              "files_per_second": 22963.61346838215
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.02643728256225586,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 3782.537020002525,
+                "workers": 2
+              },
+              "speedup": 0.16471872012697725,
+              "efficiency": 0.08235936006348862
+            },
+            "4": {
+              "time": 0.02457404136657715,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 4069.3347304285394,
+                "workers": 4
+              },
+              "speedup": 0.17720794403857534,
+              "efficiency": 0.044301986009643836
+            },
+            "8": {
+              "time": 0.03838801383972168,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 2604.979783989914,
+                "workers": 8
+              },
+              "speedup": 0.11343945444721168,
+              "efficiency": 0.01417993180590146
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0026445388793945312,
+            "stats": {
+              "files_processed": 100,
+              "files_per_second": 37813.77569419402
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.023684024810791016,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 4222.255330286496,
+                "workers": 2
+              },
+              "speedup": 0.11165918379673438,
+              "efficiency": 0.05582959189836719
+            },
+            "4": {
+              "time": 0.026119470596313477,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 3828.561518169288,
+                "workers": 4
+              },
+              "speedup": 0.10124779786952434,
+              "efficiency": 0.025311949467381085
+            },
+            "8": {
+              "time": 0.03748273849487305,
+              "stats": {
+                "files_processed": 100,
+                "files_per_second": 2667.894716755505,
+                "workers": 8
+              },
+              "speedup": 0.07055351304591194,
+              "efficiency": 0.008819189130738992
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.003281752268473307,
+        "parallel": {
+          "2": {
+            "time": 0.025907119115193684,
+            "speedup": 0.12649791756122605,
+            "efficiency": 0.06324895878061303
+          },
+          "4": {
+            "time": 0.03127249081929525,
+            "speedup": 0.11481719846602632,
+            "efficiency": 0.02870429961650658
+          },
+          "8": {
+            "time": 0.03797125816345215,
+            "speedup": 0.08626769167872615,
+            "efficiency": 0.010783461459840769
+          }
+        }
+      }
+    },
+    {
+      "num_files": 200,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.004542827606201172,
+            "stats": {
+              "files_processed": 200,
+              "files_per_second": 44025.443476435394
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.034961700439453125,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 5720.5455537370435,
+                "workers": 2
+              },
+              "speedup": 0.12993726132024006,
+              "efficiency": 0.06496863066012003
+            },
+            "4": {
+              "time": 0.03287172317504883,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 6084.25664012069,
+                "workers": 4
+              },
+              "speedup": 0.1381986451397653,
+              "efficiency": 0.03454966128494132
+            },
+            "8": {
+              "time": 0.048187255859375,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 4150.474984167195,
+                "workers": 8
+              },
+              "speedup": 0.09427446168461051,
+              "efficiency": 0.011784307710576314
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.004572868347167969,
+            "stats": {
+              "files_processed": 200,
+              "files_per_second": 43736.22523461939
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.036925554275512695,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 5416.303260006328,
+                "workers": 2
+              },
+              "speedup": 0.12384020868172808,
+              "efficiency": 0.06192010434086404
+            },
+            "4": {
+              "time": 0.03414750099182129,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 5856.943969279107,
+                "workers": 4
+              },
+              "speedup": 0.13391516844126375,
+              "efficiency": 0.03347879211031594
+            },
+            "8": {
+              "time": 0.09363389015197754,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 2135.978753797148,
+                "workers": 8
+              },
+              "speedup": 0.048837748167311304,
+              "efficiency": 0.006104718520913913
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.006360054016113281,
+            "stats": {
+              "files_processed": 200,
+              "files_per_second": 31446.27380416854
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.046442508697509766,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 4306.399581095927,
+                "workers": 2
+              },
+              "speedup": 0.13694466975368852,
+              "efficiency": 0.06847233487684426
+            },
+            "4": {
+              "time": 0.0504150390625,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 3967.0702179176756,
+                "workers": 4
+              },
+              "speedup": 0.12615390435835352,
+              "efficiency": 0.03153847608958838
+            },
+            "8": {
+              "time": 0.08307838439941406,
+              "stats": {
+                "files_processed": 200,
+                "files_per_second": 2407.365061872948,
+                "workers": 8
+              },
+              "speedup": 0.0765548591500792,
+              "efficiency": 0.0095693573937599
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.005158583323160808,
+        "parallel": {
+          "2": {
+            "time": 0.039443254470825195,
+            "speedup": 0.13024071325188555,
+            "efficiency": 0.06512035662594277
+          },
+          "4": {
+            "time": 0.03914475440979004,
+            "speedup": 0.13275590597979417,
+            "efficiency": 0.03318897649494854
+          },
+          "8": {
+            "time": 0.0749665101369222,
+            "speedup": 0.07322235633400033,
+            "efficiency": 0.009152794541750041
+          }
+        }
+      }
+    },
+    {
+      "num_files": 500,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.021663188934326172,
+            "stats": {
+              "files_processed": 500,
+              "files_per_second": 23080.627765182366
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.09591913223266602,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 5212.724389407279,
+                "workers": 2
+              },
+              "speedup": 0.22584846662059982,
+              "efficiency": 0.11292423331029991
+            },
+            "4": {
+              "time": 0.11400914192199707,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 4385.613219877496,
+                "workers": 4
+              },
+              "speedup": 0.19001273555016948,
+              "efficiency": 0.04750318388754237
+            },
+            "8": {
+              "time": 0.17432212829589844,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 2868.253186716998,
+                "workers": 8
+              },
+              "speedup": 0.12427102139066688,
+              "efficiency": 0.01553387767383336
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.01531982421875,
+            "stats": {
+              "files_processed": 500,
+              "files_per_second": 32637.450199203187
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.07174825668334961,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 6968.810436839972,
+                "workers": 2
+              },
+              "speedup": 0.21352190181235753,
+              "efficiency": 0.10676095090617876
+            },
+            "4": {
+              "time": 0.17569446563720703,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 2845.8494590971018,
+                "workers": 4
+              },
+              "speedup": 0.08719582693278474,
+              "efficiency": 0.021798956733196186
+            },
+            "8": {
+              "time": 0.1336970329284668,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 3739.798775246716,
+                "workers": 8
+              },
+              "speedup": 0.11458611970055246,
+              "efficiency": 0.014323264962569058
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.012581825256347656,
+            "stats": {
+              "files_processed": 500,
+              "files_per_second": 39739.86204805579
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.07021021842956543,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 7121.470509333306,
+                "workers": 2
+              },
+              "speedup": 0.1792021950333296,
+              "efficiency": 0.0896010975166648
+            },
+            "4": {
+              "time": 0.14388203620910645,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 3475.0689743738453,
+                "workers": 4
+              },
+              "speedup": 0.08744542117865399,
+              "efficiency": 0.021861355294663497
+            },
+            "8": {
+              "time": 0.18033909797668457,
+              "stats": {
+                "files_processed": 500,
+                "files_per_second": 2772.5546240929034,
+                "workers": 8
+              },
+              "speedup": 0.06976759558803115,
+              "efficiency": 0.008720949448503894
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.016521612803141277,
+        "parallel": {
+          "2": {
+            "time": 0.07929253578186035,
+            "speedup": 0.20619085448876232,
+            "efficiency": 0.10309542724438116
+          },
+          "4": {
+            "time": 0.14452854792277017,
+            "speedup": 0.12155132788720274,
+            "efficiency": 0.030387831971800686
+          },
+          "8": {
+            "time": 0.16278608640034994,
+            "speedup": 0.10287491222641683,
+            "efficiency": 0.012859364028302104
+          }
+        }
+      }
+    },
+    {
+      "num_files": 1000,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.05398201942443848,
+            "stats": {
+              "files_processed": 1000,
+              "files_per_second": 18524.686750553185
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.16010808944702148,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 6245.780606425213,
+                "workers": 2
+              },
+              "speedup": 0.33715985001682697,
+              "efficiency": 0.16857992500841348
+            },
+            "4": {
+              "time": 0.24030518531799316,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 4161.375039313909,
+                "workers": 4
+              },
+              "speedup": 0.22463942820461685,
+              "efficiency": 0.05615985705115421
+            },
+            "8": {
+              "time": 0.24075007438659668,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 4153.685113277262,
+                "workers": 8
+              },
+              "speedup": 0.22422431046793406,
+              "efficiency": 0.028028038808491758
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.030668258666992188,
+            "stats": {
+              "files_processed": 1000,
+              "files_per_second": 32607.002923067354
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.15354251861572266,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 6512.853957428836,
+                "workers": 2
+              },
+              "speedup": 0.19973788982677126,
+              "efficiency": 0.09986894491338563
+            },
+            "4": {
+              "time": 0.28957319259643555,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 3453.358341059052,
+                "workers": 4
+              },
+              "speedup": 0.10590848687341403,
+              "efficiency": 0.026477121718353508
+            },
+            "8": {
+              "time": 0.41257143020629883,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 2423.822705076714,
+                "workers": 8
+              },
+              "speedup": 0.07433442168222139,
+              "efficiency": 0.009291802710277674
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.0303497314453125,
+            "stats": {
+              "files_processed": 1000,
+              "files_per_second": 32949.220713926596
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.16787052154541016,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 5956.972021019741,
+                "workers": 2
+              },
+              "speedup": 0.1807925010651896,
+              "efficiency": 0.0903962505325948
+            },
+            "4": {
+              "time": 0.36732053756713867,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 2722.4178822759686,
+                "workers": 4
+              },
+              "speedup": 0.08262465160899203,
+              "efficiency": 0.020656162902248008
+            },
+            "8": {
+              "time": 0.46227502822875977,
+              "stats": {
+                "files_processed": 1000,
+                "files_per_second": 2163.214404705295,
+                "workers": 8
+              },
+              "speedup": 0.06565297624143725,
+              "efficiency": 0.008206622030179656
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.03833333651224772,
+        "parallel": {
+          "2": {
+            "time": 0.1605070432027181,
+            "speedup": 0.23923008030292928,
+            "efficiency": 0.11961504015146464
+          },
+          "4": {
+            "time": 0.29906630516052246,
+            "speedup": 0.1377241888956743,
+            "efficiency": 0.03443104722391858
+          },
+          "8": {
+            "time": 0.37186551094055176,
+            "speedup": 0.12140390279719755,
+            "efficiency": 0.015175487849649694
+          }
+        }
+      }
+    },
+    {
+      "num_files": 2000,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.051062583923339844,
+            "stats": {
+              "files_processed": 2000,
+              "files_per_second": 39167.62228489252
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.3731560707092285,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 5359.687693674008,
+                "workers": 2
+              },
+              "speedup": 0.1368397513305604,
+              "efficiency": 0.0684198756652802
+            },
+            "4": {
+              "time": 0.7729260921478271,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 2587.569523552178,
+                "workers": 4
+              },
+              "speedup": 0.06606399297692979,
+              "efficiency": 0.016515998244232447
+            },
+            "8": {
+              "time": 1.1198413372039795,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 1785.9672915750737,
+                "workers": 8
+              },
+              "speedup": 0.04559805235519608,
+              "efficiency": 0.00569975654439951
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.07277917861938477,
+            "stats": {
+              "files_processed": 2000,
+              "files_per_second": 27480.387082402427
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.34978580474853516,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 5717.784921082838,
+                "workers": 2
+              },
+              "speedup": 0.20806784503935635,
+              "efficiency": 0.10403392251967818
+            },
+            "4": {
+              "time": 0.8236086368560791,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 2428.3378178676003,
+                "workers": 4
+              },
+              "speedup": 0.08836621589739656,
+              "efficiency": 0.02209155397434914
+            },
+            "8": {
+              "time": 1.0648753643035889,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 1878.1540704606002,
+                "workers": 8
+              },
+              "speedup": 0.0683452552843883,
+              "efficiency": 0.008543156910548537
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.07394289970397949,
+            "stats": {
+              "files_processed": 2000,
+              "files_per_second": 27047.89787804823
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.30403780937194824,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 6578.129227188571,
+                "workers": 2
+              },
+              "speedup": 0.2432029748429103,
+              "efficiency": 0.12160148742145516
+            },
+            "4": {
+              "time": 0.3215959072113037,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 6218.9846175060475,
+                "workers": 4
+              },
+              "speedup": 0.22992487791642047,
+              "efficiency": 0.05748121947910512
+            },
+            "8": {
+              "time": 0.9907436370849609,
+              "stats": {
+                "files_processed": 2000,
+                "files_per_second": 2018.6856873333527,
+                "workers": 8
+              },
+              "speedup": 0.0746337366561745,
+              "efficiency": 0.009329217082021812
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.06592822074890137,
+        "parallel": {
+          "2": {
+            "time": 0.342326561609904,
+            "speedup": 0.19603685707094234,
+            "efficiency": 0.09801842853547117
+          },
+          "4": {
+            "time": 0.6393768787384033,
+            "speedup": 0.12811836226358228,
+            "efficiency": 0.03202959056589557
+          },
+          "8": {
+            "time": 1.058486779530843,
+            "speedup": 0.06285901476525296,
+            "efficiency": 0.00785737684565662
+          }
+        }
+      }
+    },
+    {
+      "num_files": 5000,
+      "file_size_kb": 100,
+      "runs": [
+        {
+          "run_number": 1,
+          "sequential": {
+            "time": 0.14580106735229492,
+            "stats": {
+              "files_processed": 5000,
+              "files_per_second": 34293.30176245311
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 1.1165580749511719,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 4478.047413896187,
+                "workers": 2
+              },
+              "speedup": 0.1305808185200496,
+              "efficiency": 0.0652904092600248
+            },
+            "4": {
+              "time": 0.567345142364502,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 8812.977545135396,
+                "workers": 4
+              },
+              "speedup": 0.2569883065265097,
+              "efficiency": 0.06424707663162743
+            },
+            "8": {
+              "time": 2.896885395050049,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 1725.9916490115813,
+                "workers": 8
+              },
+              "speedup": 0.05033028493340723,
+              "efficiency": 0.006291285616675904
+            }
+          }
+        },
+        {
+          "run_number": 2,
+          "sequential": {
+            "time": 0.15201020240783691,
+            "stats": {
+              "files_processed": 5000,
+              "files_per_second": 32892.529059235196
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.955024242401123,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 5235.469193356804,
+                "workers": 2
+              },
+              "speedup": 0.15916894635643247,
+              "efficiency": 0.07958447317821624
+            },
+            "4": {
+              "time": 2.2189953327178955,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 2253.2719768616375,
+                "workers": 4
+              },
+              "speedup": 0.06850406585652888,
+              "efficiency": 0.01712601646413222
+            },
+            "8": {
+              "time": 1.5497422218322754,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 3226.343019865879,
+                "workers": 8
+              },
+              "speedup": 0.09808741109738481,
+              "efficiency": 0.012260926387173101
+            }
+          }
+        },
+        {
+          "run_number": 3,
+          "sequential": {
+            "time": 0.16957998275756836,
+            "stats": {
+              "files_processed": 5000,
+              "files_per_second": 29484.6120319991
+            }
+          },
+          "parallel": {
+            "2": {
+              "time": 0.902519702911377,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 5540.045257594754,
+                "workers": 2
+              },
+              "speedup": 0.18789615585181335,
+              "efficiency": 0.09394807792590668
+            },
+            "4": {
+              "time": 2.624852180480957,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 1904.869172131377,
+                "workers": 4
+              },
+              "speedup": 0.06460553627309248,
+              "efficiency": 0.01615138406827312
+            },
+            "8": {
+              "time": 2.8481781482696533,
+              "stats": {
+                "files_processed": 5000,
+                "files_per_second": 1755.5081668741957,
+                "workers": 8
+              },
+              "speedup": 0.05953980893385931,
+              "efficiency": 0.007442476116732414
+            }
+          }
+        }
+      ],
+      "averages": {
+        "sequential_time": 0.15579708417256674,
+        "parallel": {
+          "2": {
+            "time": 0.9913673400878906,
+            "speedup": 0.1592153069094318,
+            "efficiency": 0.0796076534547159
+          },
+          "4": {
+            "time": 1.803730885187785,
+            "speedup": 0.1300326362187104,
+            "efficiency": 0.0325081590546776
+          },
+          "8": {
+            "time": 2.4316019217173257,
+            "speedup": 0.06931916832155044,
+            "efficiency": 0.008664896040193805
+          }
+        }
+      }
+    }
+  ],
+  "analysis": {
+    "crossover_points": {
+      "2": {
+        "num_files": null,
+        "note": "No significant speedup observed"
+      },
+      "4": {
+        "num_files": null,
+        "note": "No significant speedup observed"
+      },
+      "8": {
+        "num_files": null,
+        "note": "No significant speedup observed"
+      }
+    },
+    "optimal_workers": {
+      "10": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "50": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "100": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "200": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "500": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "1000": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "2000": {
+        "workers": 1,
+        "speedup": 1.0
+      },
+      "5000": {
+        "workers": 1,
+        "speedup": 1.0
+      }
+    },
+    "recommendations": []
+  }
+}

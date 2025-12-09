@@ -1,0 +1,68 @@
+{
+    "configuration": {
+        "num_files": 1000,
+        "num_workers": 8,
+        "file_size_kb": 10
+    },
+    "sequential": {
+        "total_time": 8.437204122543335,
+        "components": {
+            "inode_mapping": {
+                "time": 0.00950312614440918,
+                "calls": 1,
+                "avg": 0.00950312614440918,
+                "percentage": 0.11263359291045016
+            },
+            "file_processing": {
+                "time": 8.427624464035034,
+                "calls": 1,
+                "avg": 8.427624464035034,
+                "percentage": 99.88645932504224
+            }
+        },
+        "overhead_time": 0.009579658508300781,
+        "overhead_percentage": 0.11354067495777334
+    },
+    "threading": {
+        "total_time": 4.198214769363403,
+        "num_workers": 8,
+        "components": {
+            "inode_mapping": {
+                "time": 0.011476755142211914,
+                "calls": 1,
+                "avg": 0.011476755142211914,
+                "percentage": 0.273372273042434
+            },
+            "file_processing": {
+                "time": 4.186631917953491,
+                "calls": 1,
+                "avg": 4.186631917953491,
+                "percentage": 99.72410055115716
+            }
+        },
+        "overhead_time": 0.01158285140991211,
+        "overhead_percentage": 0.27589944884283457,
+        "speedup": 2.009712362529445
+    },
+    "multiprocess": {
+        "total_time": 4.592440605163574,
+        "num_workers": 8,
+        "components": {
+            "inode_mapping": {
+                "time": 0.009531974792480469,
+                "calls": 1,
+                "avg": 0.009531974792480469,
+                "percentage": 0.2075579329597221
+            },
+            "file_processing": {
+                "time": 4.582756996154785,
+                "calls": 1,
+                "avg": 4.582756996154785,
+                "percentage": 99.7891402449952
+            }
+        },
+        "overhead_time": 0.009683609008789062,
+        "overhead_percentage": 0.21085975500480425,
+        "speedup": 1.8371939558797663
+    }
+}
