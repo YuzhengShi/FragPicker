@@ -1,0 +1,87 @@
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Questions and predictions}
+We wrote the following predictions down before running any experiment
+(\texttt{PLAN.md} in the artifact, dated 2026-11-23).
+\begin{description}
+\item[RQ1, where the time goes.] For long traces, Phase~1 dominates (we predicted
+  10--30\,\textmu s per trace line); for many traced files, the per-file
+  subprocesses of Phase~2 dominate (at least 3\,ms per file), and the \texttt{find}
+  part grows with the number of files in the tree.
+\item[RQ2, attribution.] Almost all of the gain over upstream comes from removing
+  the per-file subprocesses and the per-file tree walk, not from threads; a
+  single-threaded rewrite beats every parallel configuration on a fast device.
+\item[RQ3, latency models.] With a warm cache (the normal case right after
+  tracing), an extent lookup costs microseconds on all four file systems we test.
+  With a cold cache, files created together share inode-table reads, so the mean
+  number of device reads per file is far below one. A block-layer delay that lets
+  requests overlap bounds thread speedup from above; a device that serves one
+  request at a time gives no speedup; a per-file \texttt{sleep} overstates both.
+\item[RQ4, equivalence.] Sequential and parallel modes disagree on unaligned
+  requests, on file systems without FIEMAP, on unrelated \texttt{*.txt} files in the
+  working directory, and above the parallel engine's queue size.
+\end{description}
+
+\subsection{The ablation ladder}
+Every configuration reads the same \texttt{trace.result} in a fresh working
+directory and scans the same file system mounted at \texttt{/mnt}:
+\begin{description}
+\item[(a)] upstream \texttt{processing.py}, unmodified (commit 796df86);
+\item[(b)] the fork's sequential path (no flag; commit c162012);
+\item[(c)] our single-threaded rewrite (\texttt{fastpath.py}, about 200 lines):
+  Phase~1 in memory, one directory walk with \texttt{os.scandir} to build the
+  inode map, each \texttt{<inode>.txt} written once, no subprocesses. It reproduces
+  upstream's arithmetic, including its end-alignment formula, and the order GNU
+  \texttt{sort -g} produces in the C locale; its output is byte-identical to (a) in
+  every case we ran (\S\ref{sec:correct});
+\item[(d)] the fork's \texttt{--parallel} path with 1, 4, 8 and 16 threads;
+\item[(e)] (d) with 8 threads and the extent lookup replaced by a stub that returns
+  an empty list, which isolates the cost of the lookup whose result is discarded.
+\end{description}
+Rung (c) plays the role of McSherry et al.'s competent single-threaded
+baseline~\cite{mcsherry2015cost}: a parallel version is only interesting if it beats
+it. For the whole pipeline we also compare upstream's three steps
+(\texttt{processing.py}, \texttt{merge.py}, \texttt{hotness.sh}) with the rewrite
+doing all three in one process.
+
+\subsection{Workloads and traces}
+We capture real traces with upstream's unmodified \texttt{trace.sh} on an ext4 file
+system: upstream's own \texttt{read\_seq} and \texttt{read\_stride} benchmarks on a
+1\,GiB file (128\,KiB \texttt{O\_DIRECT} reads), \texttt{tar} over a tree of about
+5{,}000 source files (buffered reads of many files), a file-server-like
+\texttt{fio} job (1{,}000 files of 1\,MiB, 4\,KiB random buffered reads), SQLite
+point lookups on a 180\,MB database with a 1\,MiB page cache, and a single
+\texttt{dd} read at a 5\,GiB offset. For controlled sweeps we generate traces in the
+format \texttt{parse.sh} produces, for $F$ traced files chosen at random from a tree
+of $T$ files.
+
+\subsection{Slow devices}
+We compare three ways of making storage slow, all with the same delay $d$:
+\begin{description}
+\item[sleep:] the fork's own method, a \texttt{time.sleep(d)} before every extent
+  lookup, on a fast device with a warm cache;
+\item[dm-delay:] the device-mapper delay target~\cite{kerneldmdelay} below the file
+  system, so that only reads that reach the device are delayed and any number of
+  them can wait concurrently; caches are dropped and the file system remounted
+  before every cold run;
+\item[QD1:] an NBD device served by nbdkit~\cite{nbdkit} with its delay filter and a
+  single thread, so that requests are served one at a time, as by a disk with one
+  actuator and no command queueing.
+\end{description}
+We count device reads from \texttt{/sys/block/<dev>/stat}. Reads are independent
+of the host: they are what a real device would have to serve.
+
+\subsection{Platform and statistics}
+All runs use one laptop (AMD Ryzen~5 6600H, 6 cores and 12 threads, 15\,GB RAM, one
+NVMe SSD) running Linux 6.18 in WSL2 (Ubuntu 24.04, Python 3.12.3, GNU findutils and
+coreutils from Ubuntu). File systems under test live on loop devices with direct
+I/O enabled, backed by a file on the WSL2 virtual disk. Unmodified upstream code
+hard-codes \texttt{/mnt}, so every run executes in a private mount namespace in
+which the file system under test is mounted at \texttt{/mnt}. Each configuration
+runs ten times unless stated otherwise, with the order of configurations shuffled
+in every repetition; we report medians with 95\% percentile-bootstrap intervals
+(10{,}000 resamples) and compute intervals for speedups by resampling numerator and
+denominator independently~\cite{hoefler2015scientific}. Raw results are JSON lines
+with the commit hashes, kernel and configuration of every run; every table and
+figure is generated from them by one script.

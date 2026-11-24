@@ -119,6 +119,20 @@ class TestFS:
         self.loop = None
         self.dm = None
         self.dev = None
+        # Real-device mode (E6): FPSTUDY_DEVICE=/dev/sdX replaces the loop image. mkfs
+        # destroys the device, so it must be confirmed with
+        # FPSTUDY_DEVICE_CONFIRM=wipe-<basename of the device>.
+        self.real = os.environ.get("FPSTUDY_DEVICE")
+        if self.real:
+            ok = os.environ.get("FPSTUDY_DEVICE_CONFIRM") == "wipe-" + os.path.basename(self.real)
+            if not ok:
+                raise RuntimeError("refusing to use %s without FPSTUDY_DEVICE_CONFIRM=wipe-%s"
+                                   % (self.real, os.path.basename(self.real)))
+            self.loop = self.real
+            if fresh:
+                mkfs(fstype, self.loop)
+            self._attach()
+            return
         if fresh:
             make_image(img, size_mb)
         self.loop = losetup(img, direct_io)
@@ -156,6 +170,8 @@ class TestFS:
         umount(self.mnt)
         if self.dm:
             dm_remove(self.dm)
+        if self.real:
+            return
         if self.loop:
             lodetach(self.loop)
         if delete:

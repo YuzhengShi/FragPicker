@@ -1,0 +1,66 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{FragPicker's analysis phase}
+FragPicker~\cite{park2021fragpicker} observes that on flash and Optane devices the
+harm done by fragmentation comes mostly from request splitting, so it moves only
+the pieces of a file that the application's own requests straddle. Its public
+artifact~\cite{fragpickerartifact} implements this in two phases. The
+\emph{analysis phase} is a chain of scripts in \texttt{src/analysis}:
+\begin{enumerate}
+\item \texttt{trace.sh} starts two BCC~\cite{bcc} \texttt{trace} processes, one
+  on \texttt{vfs\_read} and one on \texttt{vfs\_write}, filtered by process name.
+  Each event prints the inode number, request size, file position, whether the file
+  was opened with \texttt{O\_DIRECT}, and the request type. Both processes append to
+  \texttt{./trace.result}.
+\item \texttt{parse.sh} keeps those five fields and sorts the lines by inode
+  number (stable).
+\item \texttt{processing.py} has two loops. Phase~1 aligns every request to 4\,KiB
+  blocks, models the kernel's 128\,KiB readahead window for sequential buffered
+  reads, and appends one line per request to \texttt{<inode>.txt}; it opens and
+  closes that file once per trace line. Phase~2 visits every inode seen in the
+  trace, runs \texttt{find /mnt -inum <inode>} to turn it into a path, drops
+  directories and inodes that \texttt{find} cannot see, sorts the file with
+  \texttt{sort -g} and \texttt{mv}, and appends ``\texttt{<inode> <count>}'' to
+  \texttt{filelist.txt}.
+\item \texttt{merge.py} merges overlapping requests of each file into windows with
+  a hit count (one \texttt{mv} subprocess per file).
+\item \texttt{hotness.sh} keeps the hottest $p\%$ of the windows of each file with a
+  shell loop of \texttt{wc}, \texttt{awk}, \texttt{sort} and \texttt{head}.
+\end{enumerate}
+The \emph{migration phase} (\texttt{src/migration}) then resolves each listed inode
+with \texttt{find} again, reads the file's extents with \texttt{filefrag -v}, and
+rewrites every hot window that crosses an extent boundary, after punching and
+re-allocating its blocks on in-place file systems such as ext4.
+
+Two properties of this design matter below. First, the analysis phase never looks
+at file layout: extents are read only during migration. Second, the artifact's own
+evaluation traces one file per experiment (\texttt{evaluation/read\_benchmark}), so
+the per-file loop of Phase~2 runs a handful of times; how it scales with the number
+of traced files was never part of the evaluation.
+
+\subsection{The parallel analysis fork}
+A later fork~\cite{forkbranch} changes Phase~2 behind a \texttt{--parallel} flag. It
+builds one inode-to-path dictionary with a single
+\texttt{find -type f -printf '\%i \%p\textbackslash n'}, then gives each traced
+inode to a pool of Python threads. Each worker looks the path up in the dictionary,
+calls \texttt{stat}, and reads the file's extents with the FIEMAP
+ioctl~\cite{kernelfiemap} (\texttt{stat}, \texttt{open}, one or more
+\texttt{ioctl} calls, \texttt{close}). The extents of every file are then written to a
+temporary directory and sorted there with \texttt{sort} subprocesses; a third step
+sorts every \texttt{*.txt} file in the working directory with more \texttt{sort}
+subprocesses; and \texttt{filelist.txt} lists the inodes whose FIEMAP call succeeded.
+Phase~1 is unchanged. The fork reports a 12.74$\times$ speedup with 16 threads for
+1{,}000 files of 100\,KB when a 5\,ms \texttt{time.sleep} is added before every
+extent lookup, and a slowdown (0.10--0.26$\times$) without the delay on an NVMe SSD.
+
+\subsection{What a per-file metadata lookup costs}
+On ext4 the root of a file's extent tree lives in the inode itself and holds up to
+four extents; larger trees add index and leaf blocks~\cite{kernelext4}. An inode
+table block holds several inodes (sixteen with the default 256-byte inode), and when
+ext4 has to read an inode table block it reads ahead up to 32 neighbouring blocks by
+default (\texttt{inode\_readahead\_blks}). Files created together therefore tend to
+share the device reads that bring their inodes into memory. A lookup of a cached
+inode with an inline extent tree needs no device I/O at all. A fixed per-file delay
+models none of this: it charges the same latency to every lookup, cached or not,
+and lets any number of lookups wait at the same time.

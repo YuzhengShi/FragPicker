@@ -81,9 +81,12 @@ def build_inputs():
 
     def inodes_under(p):
         s = set()
+        import stat as _st
         for root, dirs, files in os.walk(p):
             for fn in files:
-                s.add(os.stat(os.path.join(root, fn)).st_ino)
+                st_ = os.lstat(os.path.join(root, fn))
+                if _st.S_ISREG(st_.st_mode):  # skip symlinks (some dangle after cp -a)
+                    s.add(st_.st_ino)
         return s
 
     st = lambda p: {os.stat(p).st_ino}
@@ -114,7 +117,16 @@ def timed(cmd):
     return time.perf_counter() - t0
 
 
-def trace_one(name, comm, cmd, wd):
+def trace_one(name, comm, cmd, wd, unbuffered=False):
+    """Trace `cmd` with upstream trace.sh.
+
+    As shipped (unbuffered=False): upstream stops its tracers with `kill $(pgrep trace)`
+    (SIGTERM; analyze.sh's earlier `kill -INT` goes to trace.sh, which has already
+    exited, and background jobs of a non-interactive shell ignore SIGINT anyway).
+    BCC's trace flushes stdout only after its header, so SIGTERM loses the last
+    block-buffered chunk of events. unbuffered=True sets PYTHONUNBUFFERED=1 for the
+    tracers, which gives the complete trace to compare against.
+    """
     os.makedirs(wd, exist_ok=True)
     for f in glob.glob(os.path.join(wd, "*")):
         os.remove(f)
@@ -122,9 +134,12 @@ def trace_one(name, comm, cmd, wd):
     t_plain = timed(cmd)
     fsimg.drop_caches()
     err = open(os.path.join(wd, "tracer.stderr"), "w")
+    env = dict(os.environ)
+    if unbuffered:
+        env["PYTHONUNBUFFERED"] = "1"
     # upstream trace.sh starts two BCC `trace` processes in the background, appending
     # to ./trace.result; run it in its own session so we can signal the whole group
-    p = subprocess.Popen(["bash", os.path.join(UPA, "trace.sh"), comm], cwd=wd,
+    p = subprocess.Popen(["bash", os.path.join(UPA, "trace.sh"), comm], cwd=wd, env=env,
                          stdout=subprocess.DEVNULL, stderr=err, start_new_session=True)
     tr = os.path.join(wd, "trace.result")
     t_wait = time.time()
@@ -148,18 +163,23 @@ def trace_one(name, comm, cmd, wd):
     p.wait(timeout=30)
     err.close()
     with open(os.path.join(wd, "tracer.stderr")) as f:
-        lost = [l.strip() for l in f if "lost" in l.lower()]
+        errtxt = f.read()
+    lost = [l.strip() for l in errtxt.splitlines() if "lost" in l.lower()]
+    fatal = errtxt.count("fatal error")
     raw_lines = sum(1 for _ in open(tr))
     os.makedirs(TRDIR, exist_ok=True)
-    with open(tr, "rb") as fi, gzip.open(os.path.join(TRDIR, name + ".raw.gz"), "wb") as fo:
+    tag = name + (".unbuffered" if unbuffered else ".asshipped")
+    with open(tr, "rb") as fi, gzip.open(os.path.join(TRDIR, tag + ".raw.gz"), "wb") as fo:
         shutil.copyfileobj(fi, fo)
     t0 = time.perf_counter()
     subprocess.run(["bash", os.path.join(UPA, "parse.sh")], cwd=wd, check=True)
     t_parse = time.perf_counter() - t0
-    with open(tr, "rb") as fi, gzip.open(os.path.join(TRDIR, name + ".parsed.gz"), "wb") as fo:
+    with open(tr, "rb") as fi, gzip.open(os.path.join(TRDIR, tag + ".parsed.gz"), "wb") as fo:
         shutil.copyfileobj(fi, fo)
     return {"t_plain_s": t_plain, "t_traced_s": t_traced, "attach_s": attach_s,
-            "lost_msgs": lost[:5], "raw_lines": raw_lines, "t_parse_s": t_parse}
+            "lost_msgs": lost[:5], "bcc_fatal_errors": fatal, "raw_lines": raw_lines,
+            "t_parse_s": t_parse, "variant": "unbuffered" if unbuffered else "as_shipped",
+            "bcc_kernel_source": os.environ.get("BCC_KERNEL_SOURCE")}
 
 
 def characterise(parsed, truth, imap):
@@ -194,13 +214,14 @@ def main():
         truth = build_inputs()
         imap = fastpath.build_inode_map(MNT)
         for name, comm, cmd in workloads():
-            wd = os.path.join(WORK, "e0", name)
-            r = trace_one(name, comm, cmd, wd)
-            r.update(characterise(os.path.join(wd, "trace.result"), truth[name], imap))
-            r.update({"exp": "e0", "workload": name, "comm": comm, "cmd": cmd,
-                      "versions": rungs.code_versions(), "ts": time.time()})
-            rungs.append_jsonl(OUT, r)
-            print(json.dumps(r, sort_keys=True), flush=True)
+            for unbuf in (False, True):
+                wd = os.path.join(WORK, "e0", name + ("_unbuf" if unbuf else ""))
+                r = trace_one(name, comm, cmd, wd, unbuffered=unbuf)
+                r.update(characterise(os.path.join(wd, "trace.result"), truth[name], imap))
+                r.update({"exp": "e0", "workload": name, "comm": comm, "cmd": cmd,
+                          "versions": rungs.code_versions(), "ts": time.time()})
+                rungs.append_jsonl(OUT, r)
+                print(json.dumps(r, sort_keys=True), flush=True)
         with open(os.path.join(TRDIR, "truth_inodes.json"), "w") as f:
             json.dump({k: sorted(v) for k, v in truth.items()}, f)
     finally:
