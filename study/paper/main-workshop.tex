@@ -1,0 +1,44 @@
+% Workshop / short-paper version (about 6 pages). The full version is main.tex.
+\documentclass[sigconf,nonacm]{acmart}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\raggedbottom
+
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xspace}
+
+% \blindtrue for a double-blind submission: hides the author and turns the
+% self-references into third-person ones
+\newif\ifblind \blindfalse
+\newcommand{\forkowner}{\ifblind A later fork of its artifact\else An earlier fork of its artifact by the present author\fi}
+\newcommand{\inputtable}[1]{\IfFileExists{#1}{\input{#1}}{\textit{(table pending: \detokenize{#1})}}}
+\newcommand{\figfile}[2]{\IfFileExists{#2}{\includegraphics[#1]{#2}}{\fbox{\parbox{0.9\linewidth}{figure pending: \detokenize{#2}}}}}
+
+\begin{document}
+
+\title{Sleeping Is Not I/O: Re-evaluating a Parallel Analysis Mode for a Selective
+Defragmenter}
+
+\ifblind
+\author{Anonymous}
+\affiliation{\institution{Anonymous institution}\country{}}
+\else
+\author{Yuzheng Shi}
+\affiliation{%
+  \institution{Khoury College of Computer Sciences, Northeastern University}
+  \city{Vancouver}
+  \country{Canada}}
+\fi
+
+\input{ws-abstract}
+
+\maketitle
+
+\input{ws-body}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}

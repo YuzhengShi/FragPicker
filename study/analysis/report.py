@@ -905,6 +905,54 @@ def gil_by_python(out):
     os.makedirs(os.path.join(out, "results"), exist_ok=True)
     with open(os.path.join(out, "results", "tab_gilpy.tex"), "w") as f:
         f.write("\n".join(L) + "\n")
+    # compact version for the workshop paper: 1,824-byte request (the fork's) per
+    # interpreter, and the 984-byte request on 3.12
+    g = lambda k: (NUMBERS.get(k) or {}).get("value")
+    W = ["\\begin{tabular}{@{}lrrrr@{}}", "\\toprule",
+         " & \\multicolumn{2}{c}{3.12} & 3.14 & 3.14t \\\\",
+         "device & 1,824\\,B & 984\\,B & 1,824\\,B & 1,824\\,B \\\\", "\\midrule"]
+    for dv, dlab in devs:
+        vals = [g("e8.%s.big.speedup16" % dv), g("e8.%s.small.speedup16" % dv),
+                g("e8py314.%s.big.speedup16" % dv), g("e8py314t.%s.big.speedup16" % dv)]
+        W.append(dlab + " & " + " & ".join(("%.2f$\\times$" % v[0]) if v else "--" for v in vals) + " \\\\")
+    W += ["\\bottomrule", "\\end{tabular}"]
+    with open(os.path.join(out, "results", "tab_gilpy_ws.tex"), "w") as f:
+        f.write("\n".join(W) + "\n")
+
+
+def walk_fig(out):
+    """E10 (and E6's walk): speedup of the threaded scandir walk over one thread."""
+    series = [("e10", "dmdelay", "dm-delay"), ("e10", "nbdpar", "NBD, 32 in flight"),
+              ("e6walk", "plain", "real network disk"), ("e10", "qd1", "one request at a time"),
+              ("e10", "plain", "loop device, no delay")]
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    any_ = False
+    for i, (tag, m, lab) in enumerate(series):
+        xs, ys = [1], [1.0]
+        for w in (4, 16):
+            v = (NUMBERS.get("%s.%s.scandir/%d.speedup_vs_1" % (tag, m, w)) or {}).get("value")
+            if v:
+                xs.append(w)
+                ys.append(v[0])
+        if len(xs) < 2:
+            continue
+        any_ = True
+        # the real disk was measured at 1 and 16 threads only: dashed, no point at 4
+        ax.plot(xs, ys, color=C[i], marker=MARK[i], ms=5, lw=1.6, label=lab,
+                ls="--" if 4 not in xs else "-")
+    if not any_:
+        plt.close(fig)
+        return
+    ax.axhline(1.0, color=INK2, lw=0.8, ls="--")
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log", base=2)
+    ax.set_xticks([1, 4, 16]); ax.set_xticklabels(["1", "4", "16"])
+    ax.set_yticks([0.125, 0.25, 0.5, 1, 2, 4, 8]); ax.set_yticklabels(["1/8", "1/4", "1/2", "1", "2", "4", "8"])
+    ax.set_xlabel("threads walking the tree", fontsize=8)
+    ax.set_ylabel("speedup over one thread", fontsize=8)
+    style(ax)
+    ax.legend(fontsize=6.3, frameon=False, loc="lower left")
+    save(fig, out, "walk_threads")
 
 
 def tex_tables(out):
@@ -1058,6 +1106,7 @@ def main():
     e6_latency(a.data, a.out)
     e2(a.data, a.out, "e6_ladder.jsonl", "e6ladder")
     gil_by_python(a.out)
+    walk_fig(a.out)
     tex_tables(a.out)
     os.makedirs(os.path.join(a.out, "results"), exist_ok=True)
     with open(os.path.join(a.out, "results", "numbers.json"), "w") as f:

@@ -6,3 +6,11 @@ main.blg
 main.log
 main.out
 main.pdf
+ws*.log
+wsbib.log
+main-workshop.aux
+main-workshop.bbl
+main-workshop.blg
+main-workshop.log
+main-workshop.out
+main-workshop.pdf

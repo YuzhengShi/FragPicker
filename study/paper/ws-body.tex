@@ -1,0 +1,272 @@
+\section{Introduction}
+
+FragPicker~\cite{park2021fragpicker} avoids the cost of defragmentation on modern
+storage by moving only the pieces of a file whose requests straddle extent boundaries.
+Its artifact first traces an application with BCC and then runs an \emph{analysis
+phase}, a chain of Python and shell scripts that turns the trace into per-file lists of
+hot regions, before a \emph{migration phase} rewrites them.
+
+\forkowner~\cite{forkbranch} parallelised the analysis phase: one batch inode-to-path
+map, extent lookups through the FIEMAP ioctl, and a pool of 16 threads. It reported a
+12.74$\times$ speedup when a 5\,ms \texttt{time.sleep} stood in for a slow disk before
+every extent lookup; no slow device was measured. We ask whether the result holds and
+find that it does not, for reasons that apply to any tool that does per-file metadata
+work in Python:
+\begin{itemize}
+\item \textbf{A single thread beats every thread count.} A rewrite with byte-identical
+  output runs the original's \texttt{processing.py} 4--191$\times$ faster on five real
+  traces and is 19--26$\times$ faster than the best parallel setting (\S\ref{ws:time}).
+\item \textbf{Sleeping is not I/O.} The user-space delay reproduces the published
+  speedup (15.5$\times$); the same delay at the block layer leaves almost nothing to
+  overlap, and threads make the lookups slower (\S\ref{ws:models}).
+\item \textbf{The interpreter decides.} When lookups do wait, CPython 3.12 holds its
+  global interpreter lock through the fork's 1{,}824-byte FIEMAP request, so 16 threads
+  gain nothing; with 984 bytes, or under CPython 3.14, they gain 13--15$\times$
+  (\S\ref{ws:gil}).
+\item \textbf{Threads belong in the tree walk} (exploratory). In a cold, scattered tree
+  the device time is in the walk that precedes the threads; a walk split across threads
+  is 3.9$\times$ faster under emulated delay and 6.1$\times$ on a real network disk
+  (\S\ref{ws:walk}).
+\end{itemize}
+The parallel mode also computes extents that nothing reads, lists no files at all on
+file systems without FIEMAP, and deadlocks above 10{,}000 traced files (\S\ref{ws:correct}).
+All scripts, traces and raw data are released~\cite{forkbranch}.
+
+\section{The analysis phase and the fork}
+\label{ws:bg}
+
+Upstream's \texttt{processing.py} has two loops. Phase~1 reads the parsed trace line by
+line and appends each request to \texttt{<inode>.txt}, opening and closing the file for
+every line. Phase~2 visits every traced inode, runs \texttt{find /mnt -inum} to turn it
+into a path, sorts the request file and renames it. \texttt{merge.py} and
+\texttt{hotness.sh} then merge adjacent requests and keep the hottest. Counted with
+\texttt{strace}, this costs fourteen new processes per traced file (3 in
+\texttt{processing.py}, 1 in \texttt{merge.py}, 10 in \texttt{hotness.sh}). The
+analysis never reads extents: only the migration phase does, with \texttt{filefrag}.
+
+The fork's \texttt{--parallel} path builds the inode map with one \texttt{find}, gives
+each traced file to a thread that runs FIEMAP on it, writes the extents to a temporary
+directory that nothing reads, and then sorts the request files.
+
+\section{Method}
+\label{ws:method}
+
+\paragraph{Ablation ladder.} (a) upstream unmodified; (b) the fork's sequential path;
+(c) our single-threaded rewrite (one batch inode map, Phase~1 in memory, no
+subprocesses), whose output is byte-identical to (a); (d) \texttt{--parallel} with 1, 4,
+8 or 16 threads; (e) (d) with the extent lookup replaced by a stub; and (m) (d) with the
+fork's resource-monitor thread replaced by a no-op. Every run hashes its output: (c)
+matched (a) in every run, and the fork's rungs matched each other everywhere and matched
+(a) except on traces with requests not aligned to blocks (\S\ref{ws:correct}).
+
+\paragraph{Workloads.} Five real traces captured with the artifact's own tracer
+(upstream's two read benchmarks, \texttt{tar}, \texttt{fio}, \texttt{sqlite3}), and
+synthetic traces of $F$ files chosen from trees of $T$ files.
+
+\paragraph{Slow devices.} The fork's \texttt{sleep}; dm-delay~\cite{kerneldmdelay}
+below the file system, which delays only reads that reach the device and lets any
+number wait at once; and an NBD device served by nbdkit~\cite{nbdkit} with one thread
+(one request at a time) or 32. A configured 5\,ms gives 8.0\,ms per read under dm-delay
+(its timer counts in 4\,ms jiffies) and 5.6\,ms under NBD, measured with \texttt{fio}.
+Caches are dropped and the file system remounted before every cold run.
+
+\paragraph{Platform and statistics.} One laptop (Ryzen~5 6600H, 6 cores, 15\,GB, NVMe
+SSD) running Linux 6.18 in WSL2 with CPython 3.12.3; test file systems (ext4, XFS,
+Btrfs, F2FS) on loop devices with direct I/O. Each configuration runs 5--10 times in
+shuffled order; we report medians with 95\% bootstrap intervals~\cite{hoefler2015scientific}.
+We wrote our predictions down before the first run; the experiments of
+\S\ref{ws:walk} and the interpreter comparison of \S\ref{ws:gil} were designed after
+seeing the data and are exploratory. One window of external load on the laptop was
+detected after the fact and its workload repeated.
+
+\section{Results}
+
+\subsection{Does the parallel path compute the same thing?}
+\label{ws:correct}
+Only as a side effect: a file whose FIEMAP fails is dropped from \texttt{filelist.txt},
+so on tmpfs and on WSL's 9p file system the parallel path lists no files where upstream
+lists all of them. Its task queue is filled before the workers start, so the 10{,}001st
+traced file blocks forever, and it re-sorts unrelated \texttt{*.txt} files in the working
+directory. Its \texttt{analyze.sh} does not parse. Both of the fork's paths also round the
+end of an unaligned request differently from upstream (neither formula is exact), so on
+the buffered \texttt{tar} and \texttt{sqlite3} traces their hot regions differ from
+upstream's.
+
+The trace that every rung analyses is itself lossy, which affects upstream and the fork
+alike. BCC's \texttt{trace} flushes its output only after the header, and upstream stops
+it with SIGTERM, so the last block-buffered chunk of events is lost: 59 of the 8{,}192
+reads of upstream's own \texttt{read\_seq} benchmark, and every event of a workload with a
+single read. Unbuffered output recovers the tail but makes BCC drop samples at high
+rates (3{,}739 during \texttt{tar}, about 13\%). File positions are printed with
+\texttt{\%u}, so a read at 5\,GiB is recorded at 1\,GiB. Trace lines carry an inode number
+but no device, so the 2 to 89 inodes per trace that live on the root file system
+(shared libraries, locale files) are attributed to any file under \texttt{/mnt} that
+happens to have the same number.
+
+\subsection{Where the time goes}
+\label{ws:time}
+
+\begin{figure}[t]
+\centering
+\figfile{width=\columnwidth}{../figs/e2_vsF_ext4_T10000_warm_None.pdf}
+\caption{Analysis time against the number of traced files $F$ in a tree of 10{,}000 files
+(warm cache; medians, 95\% intervals).}
+\label{ws:fig:ladder}
+\end{figure}
+
+Phase~1 makes about 41 system calls per trace line, 30 of them one-byte reads because
+upstream opens the trace unbuffered; it costs 68--79\,\textmu s per line on all five file
+systems. With 20 trace lines per file, \texttt{processing.py} costs 7.2\,ms per traced
+file plus 0.80\,\textmu s per entry of the tree, a fit within 2\% at trees of 1{,}000,
+10{,}000 and 100{,}000 files: every traced file pays for a walk of the whole tree.
+Table~\ref{ws:tab:real} gives the five real traces. Where a workload touches many files
+the per-file steps dominate: the whole pipeline takes 165\,s for \texttt{tar}'s 5{,}100
+files, of which Phase~1 is 1.7\,s, against 1.28\,s for the rewrite (129$\times$). Where it
+touches one file, Phase~1 dominates, and the parallel path is slower than upstream.
+
+\begin{table*}[t]
+\centering
+\caption{Real traces ($L$ lines, $F$ traced files), warm cache: seconds, median of seven
+runs, for upstream \texttt{processing.py} (a), the best \texttt{--parallel} setting (d),
+the rewrite (c), and the whole pipeline (\texttt{processing.py}, \texttt{merge.py},
+\texttt{hotness.sh}) against the rewrite doing all three steps.}
+\label{ws:tab:real}
+\small
+\inputtable{../results/tab_real.tex}
+\end{table*}
+
+The parallel path never costs less than 1.27\,s (Figure~\ref{ws:fig:ladder}): its
+resource-monitor thread sleeps for a second and is joined only after the sleep ends
+(rung m: 0.22\,s). It is faster than upstream only because one walk replaces the
+per-file \texttt{find}, and it still starts two \texttt{sort} processes per file. With 1{,}000
+traced files the rewrite takes 0.19\,s, 80$\times$ faster than upstream and 25$\times$
+faster than the best parallel setting (4.68\,s, 8 threads); stubbing out the extent
+lookup saves the parallel path only 24\%. No thread count we tried beats the single
+thread, so the parallel engine's COST~\cite{mcsherry2015cost} is unbounded.
+
+\subsection{Sleeping is not I/O}
+\label{ws:models}
+
+\begin{figure*}[t]
+\centering
+\figfile{width=0.82\textwidth}{../figs/e5_models_d5.pdf}
+\caption{The fork's lookup engine for 1{,}000 traced files under three models of a 5\,ms
+device (``seq'': the plain sequential loop). Left: files created together; right: files
+sampled from a tree of 100{,}000. Labels: data actually read from the device, cold.}
+\label{ws:fig:models}
+\end{figure*}
+
+With \texttt{time.sleep} before every lookup, 16 threads are 15.5$\times$ faster than
+the sequential loop (Figure~\ref{ws:fig:models}), close to the published 12.74$\times$.
+With the delay at the block layer, the 1{,}000 files created together are looked up in
+0.164\,s from a cold cache, because the whole job reads 192\,KiB: ext4 reads inode-table
+blocks ahead in groups of 32, and one read brings in the inodes of 512 files. Threads
+only add overhead (0.47$\times$), and on the one-request-at-a-time device as well
+(0.43$\times$). When the 1{,}000 files are scattered over 100{,}000, a cold run reads
+28.5\,MiB and takes 9.8\,s, and 16 threads take as long. Splitting the run shows why:
+the walk that builds the inode map reads 29\,MiB, and the lookups after it read nothing.
+In FragPicker's own workflow the analysis runs right after the traced application, so
+these metadata are usually cached anyway.
+
+\subsection{The interpreter lock}
+\label{ws:gil}
+
+\begin{table}[t]
+\caption{Speedup of 16 threads over one for FIEMAP calls that each wait for one device
+read (200 files with 16 extents, cold), by request size and interpreter; 3.14t has no
+GIL. Medians of five passes.}
+\label{ws:tab:gil}
+\small
+\setlength{\tabcolsep}{4pt}
+\inputtable{../results/tab_gilpy_ws.tex}
+\end{table}
+
+Python threads overlap only outside the interpreter. In CPython 3.12 and 3.13,
+\texttt{fcntl.ioctl} releases the GIL only when its argument fits a 1{,}024-byte stack
+buffer; the fork's FIEMAP request holds 32 extents, 1{,}824 bytes, so the call holds the
+lock while the kernel reads the extent tree. Table~\ref{ws:tab:gil} isolates this with
+files whose extent block must be read: the fork's request gains nothing on any device,
+the same request with room for 17 extents (984 bytes) gains 14.6--14.9$\times$ on devices
+that serve requests concurrently, and the unchanged 1{,}824-byte request gains
+14.6--14.9$\times$ under CPython 3.14, which releases the lock on this path. Timing each
+call separately confirms where the wait is: on ext4 and XFS the one read per fragmented
+file happens inside FIEMAP; on F2FS it happens in \texttt{stat}, which releases the lock,
+and there 16 threads speed that call up 3.5--4.7$\times$. The \texttt{sleep} of the
+original evaluation released the lock and ran before the ioctl, so it hid this as well.
+
+\subsection{Where threads could pay}
+\label{ws:walk}
+
+\begin{figure}[t]
+\centering
+\figfile{width=0.92\columnwidth}{../figs/walk_threads.pdf}
+\caption{A cold walk of 100{,}000 files split across threads, against one thread
+(medians). The real network disk was measured at 1 and 16 threads only.}
+\label{ws:fig:walk}
+\end{figure}
+
+Since a cold, scattered run spends its device time in the walk, we split an
+\texttt{os.scandir} walk of the 100{,}000-file tree across threads by top-level
+directory; \texttt{opendir} and \texttt{readdir} release the lock, and the inode map
+equals \texttt{find}'s in every run (Figure~\ref{ws:fig:walk}). Under dm-delay one thread
+takes 9.7\,s and four take 2.5\,s (3.9$\times$); sixteen take 4.4\,s, as passing the lock
+between them starts to cost. With 32 requests in flight on NBD the walk drops from 7.1 to
+1.8\,s; on the one-at-a-time device nothing gains more than 1.06$\times$; on the fast loop
+device threads are slower. We repeated a subset on a virtual machine whose disk is
+network block storage (CPython 3.14.4, Linux 7.0). Random reads there took 35--52\,ms at
+the median, with about ten times more throughput at 16 in flight. There 16 threads walk
+the tree 6.1$\times$ faster than one and 9.5$\times$ faster than \texttt{find} (1.17 against
+11.1\,s), while for 1{,}000 traced files in a cold tree of 10{,}000 upstream still takes
+11.6\,s, the best parallel setting 2.42\,s, and the rewrite 0.29\,s.
+
+The kernel already overlaps much of this work. Under dm-delay, ext4's inode-table
+readahead (32 blocks by default) makes the walk read 3.6 times more data than with
+readahead off (7{,}287 reads against 2{,}023) and still finish 1.7$\times$ faster (9.8
+against 16.2\,s), because the readahead reads are issued together; for files created
+together, 16 threads never gained more than 1.08$\times$ at any setting from 0 to 256.
+
+\section{Discussion}
+
+\paragraph{Lessons.} The 12.74$\times$ came from the latency model, not from the code.
+Three habits would have caught it: compare against the best sequential
+implementation~\cite{mcsherry2015cost}, not the parallel engine on one thread; inject
+latency below the cache, where only real device reads are slowed, rather than before
+every call; and count device reads per unit of work, which tells in advance how much
+there is to overlap. For a Python tool, a fourth: check which calls release the
+interpreter lock, and on which interpreter versions.
+
+\paragraph{What the analysis phase needs.} None of the fixes needs parallelism: build
+Phase~1 in memory, resolve inodes with one walk (or, better, have the tracer record
+device numbers and file handles, which also removes the foreign-inode problem), and look
+extents up once, in migration, which reads them anyway. If the metadata are cold and
+the device is deep, split the walk across a few threads.
+
+\paragraph{Threats.} Our measurements are virtualised and, except for one virtual
+machine on network block storage, on one NVMe SSD; the emulated devices bound device
+concurrency from both sides but model neither seek distance nor reordering. The network
+disk served other programs during the runs, cached recently written data, and was
+measured with three repetitions. All rungs are Python, as the artifact is.
+
+\section{Related work}
+
+FragPicker~\cite{park2021fragpicker,park2023tocs} motivates selective defragmentation on
+flash and Optane; its artifact evaluation~\cite{sosp21ae} reproduced the synthetic
+workloads, and ScaleDefrag~\cite{lee2026scaledefrag} parallelises e4defrag's
+fragmentation check and data relocation; neither measures the cost of the analysis
+phase that is our subject. Benchmarking studies have shown how strongly storage results
+depend on cache state and setup~\cite{traeger2008nine,tarasov2011benchmarking} and how
+innocent-looking setup biases measurements~\cite{mytkowicz2009wrong}, and Hoefler and
+Belli~\cite{hoefler2015scientific} catalogue reporting practice for parallel speedups,
+which we follow. Aging studies~\cite{smith1997aging,conway2017aging,kadekodi2018geriatrix}
+show how real file systems scatter metadata; our scattered layout only approximates
+aging. David~\cite{agrawal2011david} emulates large storage systems by modelling their
+runtime; dm-delay~\cite{kerneldmdelay} and nbdkit~\cite{nbdkit} inject latency below the
+file system, and we use them as two bounds on device concurrency.
+
+\section{Conclusion}
+
+A thread pool that reproduced a 12.74$\times$ speedup against a user-space sleep loses
+to one thread once delays sit where devices impose them. The waits that remain are in
+the tree walk, where a few threads do help, and under CPython 3.12 the fork's FIEMAP
+request kept even those lookups that wait from overlapping. Scripts, traces, raw data and
+the full report are in the artifact~\cite{forkbranch}.

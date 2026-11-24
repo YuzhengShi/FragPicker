@@ -1,0 +1,17 @@
+\begin{abstract}
+FragPicker (SOSP '21) defragments only the file regions that an application's requests
+straddle; its analysis phase turns a BCC trace into per-file lists of hot regions.
+\forkowner{} added a parallel analysis mode and reported a 12.74$\times$ speedup with 16
+threads, measured with a 5\,ms \texttt{sleep} added before every per-file extent lookup.
+We re-evaluate that claim with real traces, an ablation ladder from the unmodified code
+to the parallel mode, and delays injected at the block layer. A single-threaded rewrite
+with byte-identical output runs the original's analysis 4--191$\times$ faster and beats
+every parallel configuration; the original's cost is process creation and one tree walk
+per traced file. With the delay below the cache, the lookups of 1{,}000 files created
+together read 192\,KiB from the device, and 16 threads run at 0.47$\times$ the speed of
+one instead of 15.5$\times$ faster. Where lookups do wait for the device, CPython 3.12
+holds its interpreter lock through the fork's 1{,}824-byte FIEMAP request: 16 threads
+gain 1.00$\times$, against 14.6$\times$ with 984 bytes and 13--15$\times$ under CPython
+3.14. Exploratory runs, one of them on a real network disk, show where threads do pay:
+in the tree walk (3.9--6.1$\times$).
+\end{abstract}
