@@ -6,7 +6,9 @@
 # Usage: run_in_ns.sh <command> [args...]
 set -euo pipefail
 NS9P_SRC=${NS9P_SRC:-/mnt/d/fragpicker-study/scratch9p}
-mkdir -p /root/fpstudy/ns9p "$NS9P_SRC" 2>/dev/null || true
+mkdir -p /root/fpstudy/ns9p
+# only on WSL, where /mnt/d is the Windows D: drive over 9p
+if [ -d /mnt/d ] && mountpoint -q /mnt/d; then mkdir -p "$NS9P_SRC" 2>/dev/null || true; fi
 exec unshare -m --propagation private bash -c '
   set -e
   if [ -d "'"$NS9P_SRC"'" ]; then mount --bind "'"$NS9P_SRC"'" /root/fpstudy/ns9p; fi

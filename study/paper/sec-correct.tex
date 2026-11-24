@@ -68,7 +68,7 @@ These problems are upstream's and affect every rung equally.
   \texttt{read\_seq} benchmark (the end of the file), and all events of a workload
   with a single read. Setting \texttt{PYTHONUNBUFFERED=1} for the tracers recovers
   the tail but slows the consumer enough that BCC drops samples at high event rates
-  (1{,}918 during \texttt{tar}).
+  (it reported 3{,}739 lost samples during \texttt{tar}, about 13\% of the events).
 \item \texttt{trace.sh} prints the file position with \texttt{\%u}, a 32-bit format
   for the 64-bit \texttt{loff\_t}: a read at 5\,GiB is recorded at 1\,GiB.
 \item Trace lines carry an inode number but no device number. The traced processes

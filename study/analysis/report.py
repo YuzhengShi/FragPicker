@@ -116,24 +116,41 @@ def e0(data, out):
     rows = load(p)
     full = {r["workload"]: r for r in rows if r.get("variant") == "unbuffered"}
     shipped = {r["workload"]: r for r in rows if r.get("variant") == "as_shipped"}
-    lines = ["| workload | L (complete) | L as shipped (lost) | files in trace | of them on /mnt | "
-             "read by workload | O_DIRECT share | max pos | runtime plain / traced (s) | parse.sh (s) |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
+    # only these workloads issue the same reads on every run, so the difference between
+    # the two captures is the tail lost by the shipped stop procedure
+    deterministic = {"read_seq", "read_stride", "dd_hi"}
+
+    def bcc_lost(r):
+        n = 0
+        for m in r.get("lost_msgs") or []:
+            n += sum(int(t) for t in m.split() if t.isdigit())
+        return n
+
+    lines = ["| workload | L, unbuffered capture | L, as shipped | lines lost as shipped | "
+             "samples BCC reports lost (unbuffered) | inodes in trace | of them on /mnt | "
+             "O_DIRECT share | largest position recorded | runtime plain / traced (s) | parse.sh (s) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
     for w, r in full.items():
         s = shipped.get(w)
-        lost = r["L"] - s["L"] if s else None
-        lines.append("| %s | %d | %s | %d | %d | %d | %.0f%% | %d | %.2f / %.2f | %.2f |" % (
-            w, r["L"], ("%d (%d)" % (s["L"], lost)) if s else "-", r["F_unique"],
-            r["F_resolving_on_mnt"], r["F_truth_seen"], 100 * r["direct_frac"], r["max_pos"],
+        lost = (r["L"] - s["L"]) if (s and w in deterministic) else None
+        lines.append("| %s | %d | %s | %s | %d | %d | %d | %.0f%% | %d | %.2f / %.2f | %.2f |" % (
+            w, r["L"], s["L"] if s else "-",
+            lost if lost is not None else "n/a (runs differ)", bcc_lost(r), r["F_unique"],
+            r["F_resolving_on_mnt"], 100 * r["direct_frac"], r["max_pos"],
             r["t_plain_s"], r["t_traced_s"], r["t_parse_s"]))
         num("e0.%s.L" % w, r["L"], "e0_traces.jsonl (unbuffered)")
         num("e0.%s.F" % w, r["F_unique"], "e0_traces.jsonl (unbuffered)")
         num("e0.%s.F_on_mnt" % w, r["F_resolving_on_mnt"], "e0_traces.jsonl (unbuffered)")
+        num("e0.%s.foreign_inodes" % w, r["F_unique"] - r["F_resolving_on_mnt"], "e0_traces.jsonl (unbuffered)")
         num("e0.%s.max_pos" % w, r["max_pos"], "e0_traces.jsonl (unbuffered)")
-        num("e0.%s.trace_overhead" % w, r["t_traced_s"] / r["t_plain_s"], "e0_traces.jsonl (unbuffered)")
-        if s:
+        num("e0.%s.trace_overhead_single_run" % w, r["t_traced_s"] / r["t_plain_s"], "e0_traces.jsonl (unbuffered)")
+        num("e0.%s.bcc_lost_samples" % w, bcc_lost(r), "e0_traces.jsonl (unbuffered)")
+        if lost is not None:
             num("e0.%s.lines_lost_as_shipped" % w, lost, "e0_traces.jsonl (both variants)")
+        if s:
             num("e0.%s.fatal_as_shipped" % w, s.get("bcc_fatal_errors"), "e0_traces.jsonl")
+    lines.append("")
+    lines.append("One run of each capture per workload; the runtimes are single measurements.")
     write_md(out, "e0_traces.md", "\n".join(lines) + "\n")
 
 

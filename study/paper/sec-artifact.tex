@@ -1,0 +1,26 @@
+\section{Artifact}
+\label{sec:artifact}
+
+Everything needed to repeat this study is in the \texttt{study/} directory of the
+\texttt{storage-study} branch of the fork~\cite{forkbranch}.
+\begin{itemize}
+\item \texttt{study/lib/fpstudy/}: the single-threaded rewrite (\texttt{fastpath.py}),
+  the ladder runner, loop-device, dm-delay and NBD helpers, corpus and trace
+  generators, and the statistics.
+\item \texttt{study/experiments/}: one driver per experiment (E0--E5), each writing one
+  JSON line per run with the commit hashes of the code under test, the kernel
+  release and the full configuration.
+\item \texttt{study/data/}: the raw results behind every number in this paper,
+  including the captured traces, and \texttt{EXCLUDE.json}, which lists the rows we
+  dropped and why.
+\item \texttt{study/analysis/report.py}: regenerates every table, every figure and
+  \texttt{results/numbers.json}, which maps each number quoted in the text to the
+  file it came from.
+\end{itemize}
+The code under test is exported unmodified from git (upstream 796df86, fork
+c162012). Each experiment starts with one command,
+\texttt{study/bin/run\_exp.sh <driver> [options]}, which copies the code, prepares BCC's
+kernel headers, runs the driver in a private mount namespace with the file system
+under test at \texttt{/mnt}, and copies the results back. \texttt{study/README.md}
+lists the packages and the exact invocations; \texttt{study/bin/run\_batch1.sh} runs the
+whole local batch in about \textbf{X} hours on our machine.

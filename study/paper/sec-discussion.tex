@@ -1,0 +1,43 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{When could threads pay?}
+Threads overlap waiting, so they help only when the analysis waits on many
+independent device reads that the device can serve concurrently. In FragPicker's
+workflow that is the exception: the analysis runs right after tracing the
+application, which has just touched the same inodes, directories and extent blocks,
+so the lookups hit the cache (\S\ref{sec:fiemap}). The cases that remain are an
+analysis run long after the trace, on a machine whose memory cannot hold the
+metadata, over files whose inodes are scattered, on a device with deep queues
+(network block storage, a RAID of disks). Even then the single tree walk that
+builds the inode map is sequential and sits before any parallel work
+(\S\ref{sec:models}).
+
+\paragraph{What the analysis phase should do instead.}
+Our measurements point to three changes, in order of benefit, none of which needs
+parallelism.
+\begin{enumerate}
+\item \emph{Do Phase~1 in memory.} Grouping requests by inode in a dictionary and
+  writing each request file once removes three system calls per trace line; this is
+  most of the rewrite's gain on long traces.
+\item \emph{Never resolve inodes one \texttt{find} at a time.} One walk of the tree
+  replaces $F$ walks. Better still, the tracer could record the device number and
+  the inode generation next to the inode number; then a file can be opened with
+  \texttt{open\_by\_handle\_at} without any path lookup, and inodes from other file
+  systems can no longer be confused with files under \texttt{/mnt}.
+\item \emph{Look extents up once.} Extents are needed only by the migration phase,
+  which already reads them; reading them during analysis as well, as the parallel
+  path does, doubles the work.
+\end{enumerate}
+Aggregating requests in a BPF map instead of printing every event would also remove
+the two tracing problems we found, the lost tail of the output and the dropped
+samples, and the 32-bit position format; we leave that design to future work.
+
+\paragraph{Lessons for evaluating parallel tools.}
+The 12.74$\times$ result was produced by the latency model, not by the code. A
+\texttt{sleep} before every lookup charges the same latency to cached and uncached
+lookups and lets all of them wait at once. Three habits would have caught it: compare
+against the best sequential implementation, not against the parallel engine with one
+thread; inject latency below the cache, at the block layer, so that only real device
+reads are slowed; and count device reads per unit of work, which tells in advance how
+much there is to overlap.

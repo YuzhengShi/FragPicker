@@ -146,8 +146,14 @@ def main():
                             record(model, d, "warm", w, rep, run_engine(tasks, w), {})
                     set_sleep(0)
                     fs.close(delete=False)
-                elif model == "dmdelay":
-                    fs = fsimg.TestFS(img, size_mb, "ext4", MNT, delay_ms=d, fresh=False)
+                elif model in ("dmdelay", "plain"):
+                    # plain: the device as it is (loop device here; the real disk in E6)
+                    if model == "plain" and d != delays[0]:
+                        continue
+                    dd_ = d if model == "dmdelay" else None
+                    fs = fsimg.TestFS(img, size_mb, "ext4", MNT, delay_ms=dd_, fresh=False)
+                    if model == "plain":
+                        d = 0
                     for cache in ("cold", "warm"):
                         for rep in range(a.reps):
                             for w in rnd.sample(workers, len(workers)):
@@ -174,7 +180,8 @@ def main():
                     finally:
                         fsimg.umount(MNT)
                         nbd.close()
-        os.remove(img)
+        if os.path.exists(img):
+            os.remove(img)
 
 
 if __name__ == "__main__":
