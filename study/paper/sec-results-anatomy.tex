@@ -1,0 +1,48 @@
+\subsection{Where the analysis time goes}
+\label{sec:anatomy}
+
+\paragraph{Phase 1 costs about 70\,\textmu s per trace line.}
+Figure~\ref{fig:phase1} times upstream's Phase~1 on its own (the first 61 lines of the
+unmodified \texttt{processing.py}, cut programmatically) against the rewrite's
+in-memory version, which writes the same files. On the WSL root file system the
+upstream loop settles at \textbf{[74]}\,\textmu s per line for long traces: 7.4\,s for
+$10^5$ lines and 73.8\,s for $10^6$, against 0.32\,s and 2.4\,s for the rewrite. A
+system-call count explains it. For each trace line, Phase~1 makes about 41 calls: 30
+one-byte \texttt{read}s, because upstream opens the trace with \texttt{buffering=0}
+and then calls \texttt{readlines()}, which on an unbuffered file reads one byte at a
+time, and then \texttt{openat}, \texttt{fstat}, an \texttt{ioctl} (the terminal check
+of Python's \texttt{open}), five \texttt{lseek}s, one \texttt{write} and one
+\texttt{close} to append a single line to \texttt{<inode>.txt}. The fork copied this
+code into both of its paths.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figs/e3_phase1_F1.pdf}
+\caption{Phase~1 wall time against trace length, upstream versus rewrite, one traced
+file. Medians of ten runs.}
+\label{fig:phase1}
+\end{figure}
+
+\paragraph{Phase 2 and the rest of the pipeline cost fourteen processes per file.}
+Table~\ref{tab:anatomy} (\S\ref{sec:background}) showed the per-file work. On the
+real traces of E0, Table~\ref{tab:real} and Figure~\ref{fig:breakdown} split the whole
+upstream pipeline into its steps: \textbf{[E2-real numbers pending]}.
+
+\begin{table*}[t]
+\caption{Real traces, warm cache: wall time (s, median of seven runs) of upstream
+\texttt{processing.py} (a), the best \texttt{--parallel} setting (d), the rewrite (c),
+and of the whole pipeline (\texttt{processing.py}, \texttt{merge.py},
+\texttt{hotness.sh}) against the rewrite doing all three steps.}
+\label{tab:real}
+\small
+\centering
+\input{../results/tab_real.tex}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{../figs/e2real_breakdown_warm.pdf}
+\caption{Left: share of the upstream pipeline's time by step on each real trace. Right:
+total time, upstream pipeline against the rewrite (median of seven runs, warm cache).}
+\label{fig:breakdown}
+\end{figure*}

@@ -1,0 +1,16 @@
+\subsection{Where the cold reads happen}
+\label{sec:decompose}
+
+In the scattered case of Figure~\ref{fig:models} the device is busy, yet threads do not
+help. Table~\ref{tab:decompose} splits a cold run into the tree walk that builds the
+inode map and the per-file lookups that follow it, and counts device reads in each
+part: \textbf{[E5b results pending]}.
+
+\begin{table}[t]
+\caption{A cold run of the scattered case split into the inode-map walk and the
+per-file lookups (5\,ms configured delay), and the lookups alone when the paths are
+already known. Medians of five runs.}
+\label{tab:decompose}
+\small
+\input{../results/tab_decompose.tex}
+\end{table}

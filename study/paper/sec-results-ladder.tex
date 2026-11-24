@@ -1,0 +1,38 @@
+\subsection{The ablation ladder}
+\label{sec:ladder}
+
+Figure~\ref{fig:ladder} runs every rung on synthetic traces of $F$ traced files, chosen
+at random from a tree of $T = 10{,}000$ files of 16\,KB, 20 requests per file, with a
+warm cache. All rungs produced identical output in every cell.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figs/e2_vsF_ext4_T10000_warm_None.pdf}
+\caption{Analysis wall time against the number of traced files $F$ ($T = 10{,}000$ files
+in the tree, warm cache). Medians with 95\% bootstrap intervals; rungs as in
+\S\ref{sec:method}.}
+\label{fig:ladder}
+\end{figure}
+
+\paragraph{Upstream grows with $F \times T$.} Upstream costs about \textbf{[15]}\,ms per
+traced file in this tree: one \texttt{find} over 10{,}000 entries plus a \texttt{sort}
+and an \texttt{mv}. With 1{,}000 traced files it takes \textbf{[15.1]}\,s; the fork's
+sequential path is the same code and the same time.
+
+\paragraph{The parallel path has a floor of a second.} Every \texttt{--parallel} run
+costs at least \textbf{[1.27]}\,s, even for one traced file, whatever the thread count.
+Most of it is the resource-monitor thread that \texttt{processing.py} enables whenever
+no dashboard is requested: it samples, sleeps for one second, and is joined only after
+that sleep ends. The fork's own benchmark scripts turn monitoring off, so this cost
+never appeared in its results.
+
+\paragraph{The rewrite beats every thread count.} At $F = 1{,}000$ the rewrite takes
+\textbf{[0.19]}\,s, \textbf{[80]}$\times$ faster than upstream and \textbf{[25]}$\times$
+faster than the best parallel setting (\textbf{[4.76]}\,s with 8 threads). The parallel
+path is faster than upstream only because its single walk replaces the per-file
+\texttt{find}; it still starts two \texttt{sort} processes per file, one for the
+discarded extents and one for the request file. Removing the extent lookup altogether
+(rung e) changes its time by less than \textbf{[2]}\%: with a warm cache the lookups the
+threads are meant to overlap cost almost nothing. In McSherry et al.'s
+terms~\cite{mcsherry2015cost}, the parallel engine's COST is unbounded: no thread count
+we tried outperforms the single thread.
