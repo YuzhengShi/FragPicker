@@ -709,6 +709,27 @@ def tex_tables(out):
         tex += rows + ["\\bottomrule", "\\end{tabular}"]
         write_md(out, "tab_real.tex", "\n".join(tex) + "\n")
 
+    # Table: decomposition of cold runs (E5b)
+    rows = []
+    for layout in ("together", "scattered"):
+        for model, ml in (("plain", "loop"), ("dmdelay", "dm-delay"), ("qd1", "one at a time")):
+            for d in (0, 5):
+                k = "e5b.%s.%s.d%d" % (layout, model, d)
+                w = g(k + ".walk_s")
+                if w is None:
+                    continue
+                sp = g(k + ".paths_known_speedup16")
+                rows.append("%s & %s & %s (%s) & %s (%s) & %s \\\\" % (
+                    layout, ml, fmt(w, 3), "%.0f" % (g(k + ".walk_reads") or 0),
+                    fmt(g(k + ".lookups_after_walk_s"), 3),
+                    "%.0f" % (g(k + ".lookup_reads_after_walk") or 0),
+                    ("%s$\\times$" % fmt(sp)) if sp else "--"))
+    if rows:
+        tex = ["\\begin{tabular}{@{}llrrr@{}}", "\\toprule",
+               "files & device & walk, s (reads) & lookups after walk, s (reads) & paths known: 16 vs 1 thr. \\\\",
+               "\\midrule"] + rows + ["\\bottomrule", "\\end{tabular}"]
+        write_md(out, "tab_decompose.tex", "\n".join(tex) + "\n")
+
     # Table: GIL x device (E8)
     devs = [("plain", "loop, no delay"), ("dmdelay", "dm-delay"), ("nbd_qd1", "one request at a time"),
             ("nbd_par", "32 in flight")]
