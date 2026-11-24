@@ -1,0 +1,4 @@
+# study/: keep raw data and generated figures under version control
+!*.txt
+!*.out
+__pycache__/
