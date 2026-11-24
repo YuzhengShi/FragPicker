@@ -82,7 +82,7 @@ On ext4 the root of a file's extent tree lives in the inode itself and holds up 
 four extents; larger trees add index and leaf blocks~\cite{kernelext4}. An inode
 table block holds several inodes (sixteen with the default 256-byte inode), and when
 ext4 has to read an inode table block it reads ahead up to 32 neighbouring blocks by
-default (\texttt{inode\_readahead\_blks}). Files created together therefore tend to
+default (\texttt{inode\_readahead\_blks}~\cite{kernelext4admin}). Files created together therefore tend to
 share the device reads that bring their inodes into memory. A lookup of a cached
 inode with an inline extent tree needs no device I/O at all. A fixed per-file delay
 models none of this: it charges the same latency to every lookup, cached or not,

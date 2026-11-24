@@ -608,6 +608,26 @@ def tex_tables(out):
         tex += rows + ["\\bottomrule", "\\end{tabular}"]
         write_md(out, "tab_real.tex", "\n".join(tex) + "\n")
 
+    # Table: delay models (E5): speedup of 16 threads (sequential loop time)
+    models = [("sleep", "warm", "sleep (user space)"), ("dmdelay", "cold", "dm-delay, cold"),
+              ("qd1", "cold", "one at a time, cold"), ("dmdelay", "warm", "dm-delay, warm")]
+    rows = []
+    for layout in ("together", "scattered"):
+        lab = layout
+        for model, cache, mlab in models:
+            cells_ = []
+            for d in (1, 5, 10):
+                spv = NUMBERS.get("e5.%s.%s.d%d.%s.speedup16" % (layout, model, d, cache), {}).get("value")
+                sq = g("e5.%s.%s.d%d.%s.seq_s" % (layout, model, d, cache))
+                cells_.append("--" if spv is None else "%s$\\times$ (%s\\,s)" % (fmt(spv[0]), fmt(sq, 3)))
+            rows.append("%s & %s & %s \\\\" % (lab, mlab, " & ".join(cells_)))
+            lab = ""
+    if any("$" in r for r in rows):
+        tex = ["\\begin{tabular}{@{}llrrr@{}}", "\\toprule",
+               "files & model & 1\\,ms & 5\\,ms & 10\\,ms \\\\", "\\midrule"]
+        tex += rows[:4] + ["\\midrule"] + rows[4:] + ["\\bottomrule", "\\end{tabular}"]
+        write_md(out, "tab_models.tex", "\n".join(tex) + "\n")
+
 
 def main():
     ap = argparse.ArgumentParser()
