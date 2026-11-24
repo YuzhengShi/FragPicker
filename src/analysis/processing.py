@@ -209,7 +209,8 @@ def process_trace_sequential(mount_point="/mnt"):
 
 
 def process_trace_parallel(mount_point="/mnt", num_workers=None, 
-                          enable_dashboard=False, enable_profiling=True):
+                          enable_dashboard=False, enable_profiling=True,
+                          config=None):
     """
     Parallel processing with all optimizations
     
@@ -219,6 +220,10 @@ def process_trace_parallel(mount_point="/mnt", num_workers=None,
     - Parallel file sorting
     - Progress monitoring
     - Performance profiling
+
+    config is the Config loaded from --config. Without one, the defaults plus
+    the FRAGPICKER_* environment variables are used. num_workers (--workers)
+    overrides the worker count of either.
     """
     if not PARALLEL_AVAILABLE:
         print("ERROR: Parallel mode requested but modules not available")
@@ -228,8 +233,9 @@ def process_trace_parallel(mount_point="/mnt", num_workers=None,
     logger.info("PARALLEL MODE - All Optimizations Enabled")
     logger.info("=" * 70)
     
-    # Setup configuration
-    config = Config.from_env()
+    # Setup configuration: the --config file wins over the environment
+    if config is None:
+        config = Config.from_env()
     if num_workers:
         config.parallel.num_workers = num_workers
     else:
@@ -400,7 +406,7 @@ def _dummy_context():
     return nullcontext()
 
 
-def benchmark_modes(mount_point="/mnt"):
+def benchmark_modes(mount_point="/mnt", config=None):
     """Compare sequential vs parallel performance"""
     print("\n" + "=" * 70)
     print("BENCHMARK MODE: Sequential vs Parallel Comparison")
@@ -418,7 +424,8 @@ def benchmark_modes(mount_point="/mnt"):
     # Run parallel
     print("\n[2/2] Running Parallel Mode...")
     print("-" * 70)
-    par_result = process_trace_parallel(mount_point, enable_profiling=False)
+    par_result = process_trace_parallel(mount_point, enable_profiling=False,
+                                        config=config)
     
     # Compare results
     print("\n" + "=" * 70)
@@ -478,7 +485,8 @@ Examples:
     parser.add_argument('--profile', action='store_true',
                        help='Enable detailed performance profiling')
     parser.add_argument('--config', type=str,
-                       help='Path to YAML configuration file')
+                       help='Path to YAML configuration file '
+                            '(used by --parallel and --benchmark)')
     parser.add_argument('--quiet', action='store_true',
                        help='Suppress non-error output')
     
@@ -491,7 +499,8 @@ Examples:
     
     signal.signal(signal.SIGINT, signal_handler)
     
-    # Load configuration if provided
+    # Load configuration if provided; the parallel modes start from it
+    config = None
     if args.config and PARALLEL_AVAILABLE:
         config = Config.from_yaml(args.config)
         set_config(config)
@@ -505,7 +514,7 @@ Examples:
     try:
         if args.benchmark:
             # Benchmark mode
-            benchmark_modes(args.mount_point)
+            benchmark_modes(args.mount_point, config=config)
         
         elif args.parallel:
             # Parallel mode
@@ -513,7 +522,8 @@ Examples:
                 mount_point=args.mount_point,
                 num_workers=args.workers,
                 enable_dashboard=args.dashboard,
-                enable_profiling=args.profile
+                enable_profiling=args.profile,
+                config=config
             )
         
         else:

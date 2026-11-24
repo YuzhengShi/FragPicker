@@ -21,7 +21,7 @@ python3 processing.py [OPTIONS]
 
 Run with no arguments, the script takes the original sequential path on `/mnt`.
 
-Environment variables read in parallel mode: `FRAGPICKER_WORKERS`, `FRAGPICKER_MOUNT_POINT`.
+Environment variables: `FRAGPICKER_LOG_LEVEL` sets the log level. `FRAGPICKER_WORKERS` and `FRAGPICKER_MOUNT_POINT` are read into the configuration but change nothing in `processing.py`; use `--workers` and `--mount-point`. (The migration scripts read `FRAGPICKER_MOUNT_POINT` themselves.)
 
 ## Configuration file
 
@@ -41,7 +41,9 @@ logging:
   file_path: null
 ```
 
-Note: `--config` loads the file, but `--parallel` then builds its configuration from environment variables and `--workers` (`process_trace_parallel` in `src/analysis/processing.py`). A YAML file passed with `--config` does not change a `--parallel` run. Use `--workers` or `FRAGPICKER_WORKERS` for the worker count.
+`--config` applies to `--parallel` and `--benchmark` runs; a sequential run reads no configuration. The file is the base configuration of the run. Without `--config`, the base is the defaults plus the `FRAGPICKER_*` environment variables, which a file replaces. `--workers N` overrides `parallel.num_workers`. Without `--workers`, auto-tuning runs (`Config.auto_tune`): while `parallel.auto_detect_cores` is true (the default) it sets the worker count from the CPU count and ignores `num_workers`, so set `auto_detect_cores: false` to use the value in the file; it also lowers `queue_size` to 1000 when under 4 GB of memory is available.
+
+The code reads only some of the keys: `parallel` (`num_workers`, `auto_detect_cores`, `max_workers`, `enable_hyperthreading`, `queue_size`) and `fiemap` (`max_extents_per_call`, `retry_attempts`, `retry_delay_ms`). The other keys in `config/default.yaml` have no effect on a run. That includes `mount_point` (use `--mount-point`) and the `logging` section, because the loggers are created when the modules are imported, before the file is read (use `FRAGPICKER_LOG_LEVEL`).
 
 ## Using the modules directly
 
