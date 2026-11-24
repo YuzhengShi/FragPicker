@@ -5,9 +5,9 @@ straddle; its analysis phase turns a BCC trace into per-file lists of hot region
 threads, measured with a 5\,ms \texttt{sleep} added before every per-file extent lookup.
 We re-evaluate that claim with real traces, an ablation ladder from the unmodified code
 to the parallel mode, and delays injected at the block layer. A single-threaded rewrite
-with byte-identical output runs the original's analysis 4--191$\times$ faster and beats
-every parallel configuration; the original's cost is process creation and one tree walk
-per traced file. With the delay below the cache, the lookups of 1{,}000 files created
+with byte-identical output runs the original's \texttt{processing.py} 4--191$\times$
+faster (its whole pipeline 4--129$\times$) and beats every parallel configuration; the
+original's cost is process creation and one tree walk per traced file. With the delay below the cache, the lookups of 1{,}000 files created
 together read 192\,KiB from the device, and 16 threads run at 0.47$\times$ the speed of
 one instead of 15.5$\times$ faster. Where lookups do wait for the device, CPython 3.12
 holds its interpreter lock through the fork's 1{,}824-byte FIEMAP request: 16 threads

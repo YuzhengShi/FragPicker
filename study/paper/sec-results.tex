@@ -15,10 +15,12 @@ For the fork's thread pool to beat a single thread, four conditions must hold at
 The fork's user-space \texttt{sleep} satisfies all four by construction. Real lookups
 in FragPicker's workflow satisfy none of them in the common case. Where we arranged for
 some to hold, the fork's own lookup function gained modestly from threads (1.4--1.6$\times$
-on F2FS, whose one read per file happens in \texttt{stat} and \texttt{open}), and the
-waits overlapped fully only in code the fork does not run: 984-byte requests or
-processes (14.6--15.0$\times$), or lookups whose paths are known without a tree walk
-(13$\times$). As shipped, \texttt{--parallel} never beat the single-threaded rewrite.
+on F2FS, whose one read per file happens in \texttt{stat} and \texttt{open}), and on
+CPython 3.12 the waits overlapped fully only in code the fork does not run: 984-byte
+requests or processes (14.6--15.0$\times$), or lookups whose paths are known without a
+tree walk (13$\times$); on CPython 3.14 the fork's own lookups overlap them too
+(\S\ref{sec:gilpy}). As shipped, \texttt{--parallel} never beat the single-threaded
+rewrite, on either machine.
 
 \input{sec-results-anatomy}
 \input{sec-results-ladder}

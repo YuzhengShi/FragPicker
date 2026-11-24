@@ -185,10 +185,11 @@ Python threads overlap only outside the interpreter. In CPython 3.12 and 3.13,
 \texttt{fcntl.ioctl} releases the GIL only when its argument fits a 1{,}024-byte stack
 buffer; the fork's FIEMAP request holds 32 extents, 1{,}824 bytes, so the call holds the
 lock while the kernel reads the extent tree. Table~\ref{ws:tab:gil} isolates this with
-files whose extent block must be read: the fork's request gains nothing on any device,
-the same request with room for 17 extents (984 bytes) gains 14.6--14.9$\times$ on devices
-that serve requests concurrently, and the unchanged 1{,}824-byte request gains
-14.6--14.9$\times$ under CPython 3.14, which releases the lock on this path. Timing each
+files whose extent block must be read: on 3.12 the fork's request gains nothing on any
+device, the same request with room for 17 extents (984 bytes) gains 14.6--14.9$\times$ on
+devices that serve requests concurrently, and the unchanged 1{,}824-byte request gains
+14.6--14.9$\times$ under CPython 3.14, which releases the lock on this path (the 3.14
+runs used a small stand-in for the two \texttt{psutil} calls the fork makes at import). Timing each
 call separately confirms where the wait is: on ext4 and XFS the one read per fragmented
 file happens inside FIEMAP; on F2FS it happens in \texttt{stat}, which releases the lock,
 and there 16 threads speed that call up 3.5--4.7$\times$. The \texttt{sleep} of the

@@ -10,6 +10,8 @@ byte-identical output. Delays injected below the cache, where real devices impos
 them, leave threads nothing to overlap when files are created together; when files
 are scattered, the reads happen in the tree walk before the threads start; and where
 a lookup does wait for its own extent block, the fork's request size keeps the
-interpreter lock held through the wait. For tools that do per-file metadata work, the
+interpreter lock held through the wait on CPython 3.12 and 3.13 (not on 3.14). The
+waits that threads can overlap are in the tree walk, which a few threads do speed up.
+For tools that do per-file metadata work, the
 habits that would have caught this are cheap: a strong sequential baseline, latency
 injected at the block layer, and a count of device reads per unit of work.
