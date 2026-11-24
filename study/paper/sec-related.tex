@@ -1,0 +1,34 @@
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Defragmentation for modern storage.}
+FragPicker~\cite{park2021fragpicker} and its journal version~\cite{park2023tocs}
+argue that request splitting, not seek distance, is what fragmentation costs on
+flash and Optane, and migrate only the data the application's requests straddle.
+The artifact's evaluation reproduced for its synthetic workloads; its YCSB and
+FileBench experiments are not part of the artifact~\cite{sosp21ae}. ScaleDefrag~\cite{lee2026scaledefrag}
+parallelises e4defrag's fragmentation check and data relocation with one thread per
+file and reports up to 3.8$\times$ shorter defragmentation on real SATA and Optane
+SSDs; there the work per file is data movement, which does benefit from
+concurrency. Neither measures the cost of FragPicker's analysis phase, which is our
+subject. File-system aging~\cite{smith1997aging,conway2017aging,kadekodi2018geriatrix}
+produces the fragmented layouts such tools work on; we only need layouts with
+controlled extent counts and use a simpler punch-and-rewrite procedure.
+
+\paragraph{Benchmarking methodology.}
+Our comparison follows McSherry et al.'s COST argument~\cite{mcsherry2015cost}: a
+scalable implementation should be measured against a competent single-threaded
+one. Hoefler and Belli~\cite{hoefler2015scientific} catalogue reporting practice for
+parallel speedups, including baselines, repetitions and confidence intervals. For
+storage specifically, Traeger et al.~\cite{traeger2008nine} and Tarasov et
+al.~\cite{tarasov2011benchmarking} show how strongly results depend on cache state
+and setup, and Mytkowicz et al.~\cite{mytkowicz2009wrong} how innocuous-looking setup
+choices bias measurements. Our contribution in this space is a concrete case where
+the latency model itself, not the measurement, produced the speedup.
+
+\paragraph{Emulating slow storage.}
+David~\cite{agrawal2011david} emulates large storage systems by modelling their
+runtime rather than storing their data. dm-delay~\cite{kerneldmdelay} and nbdkit's
+delay filter~\cite{nbdkit} inject latency below the file system. We use them as two
+bounds on device concurrency (any number of requests in flight versus one at a
+time) and contrast both with a delay injected in user space.

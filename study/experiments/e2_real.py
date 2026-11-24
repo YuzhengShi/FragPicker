@@ -18,7 +18,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
-from fpstudy import fsimg, rungs  # noqa: E402
+from fpstudy import fsimg, rungs, variants  # noqa: E402
 
 DATA = os.environ.get("FPSTUDY_DATA", "/root/fpstudy/data")
 WORK = os.environ.get("FPSTUDY_WORK", "/root/fpstudy/work")
@@ -64,6 +64,18 @@ def run_fast_pipeline(trace, wd, pct=100):
             "digest_full": rungs.digest(wd, with_pipeline=True)[0]}
 
 
+def run_up_phase1(trace, wd):
+    """upstream Phase 1 alone (generated variant), to split processing.py into phases."""
+    if os.path.exists(wd):
+        shutil.rmtree(wd)
+    os.makedirs(wd)
+    shutil.copy(trace, os.path.join(wd, "trace.result"))
+    script = variants.make_up_phase1(os.path.join(WORK, "up_phase1.py"))
+    t0 = time.perf_counter()
+    subprocess.run([sys.executable, script], cwd=wd, check=True, env=dict(os.environ, LC_ALL="C"))
+    return {"phase1_s": time.perf_counter() - t0, "status": "ok"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--workloads", default="read_seq,read_stride,tar,fio,sqlite3")
@@ -87,7 +99,7 @@ def main():
                 shutil.copyfileobj(fi, fo)
             L = sum(1 for _ in open(trace, "rb"))
             for cache in a.caches.split(","):
-                items = a.rungs.split(",") + ["pipe_a", "pipe_c"]
+                items = a.rungs.split(",") + ["pipe_a", "pipe_c", "p1_a"]
                 if cache == "warm":
                     for r in a.rungs.split(","):
                         rungs.run_rung(r, trace, os.path.join(WORK, "e2r", "warm", r))
@@ -102,6 +114,9 @@ def main():
                             res["rung"] = r
                         elif r == "pipe_c":
                             res = run_fast_pipeline(trace, os.path.join(WORK, "e2r", r), a.pct)
+                            res["rung"] = r
+                        elif r == "p1_a":
+                            res = run_up_phase1(trace, os.path.join(WORK, "e2r", r))
                             res["rung"] = r
                         else:
                             res = rungs.run_rung(r, trace, os.path.join(WORK, "e2r", r))

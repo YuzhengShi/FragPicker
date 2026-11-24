@@ -1,0 +1,30 @@
+\section{Threats to validity}
+\label{sec:threats}
+
+\paragraph{Virtualised platform.} All measurements except
+\S\ref{sec:realdev} ran in WSL2, a Hyper-V virtual machine. Process creation, system
+calls and page-cache behaviour are those of a real Linux kernel, so the CPU-bound
+costs that dominate Phases~1 and~2 should carry over to bare metal, but their
+absolute values will differ. ``Cold'' runs drop the guest's caches and remount the
+file system, and the loop devices bypass the guest page cache, but the Windows host
+may still cache the virtual disk; the cold timings on the plain loop device are
+therefore lower bounds on device time. Our conclusions about slow devices rest on
+request counts and on injected delays, which the host cache does not affect.
+
+\paragraph{Emulated devices.} dm-delay and the one-request-at-a-time NBD device bound
+device concurrency from both sides but model neither seek distance nor command
+reordering. A real disk with native command queueing sits between the two bounds.
+
+\paragraph{Synthetic trees and traces.} The controlled sweeps use freshly created
+trees with one extent per file unless stated otherwise. Aged file systems scatter
+inodes and directory blocks more, which increases cold-cache device reads per file
+(our \emph{scattered} layout approximates this). The real traces come from six
+workloads on one machine.
+
+\paragraph{Implementation language.} All rungs are Python, as the artifact is; the
+cost of a Python-level loop iteration and of \texttt{fork}/\texttt{exec} are part of
+what we measure. A C implementation of either design would shift the constants but
+not the subprocess and tree-walk counts that dominate upstream.
+
+\paragraph{One code version.} We measured the fork at commit c162012 and upstream at
+796df86. Later changes to either could change the results.

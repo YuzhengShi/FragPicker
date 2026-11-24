@@ -1,0 +1,88 @@
+\section{Does the parallel path compute the same thing?}
+\label{sec:correct}
+
+Before timing anything we checked what each rung produces. Table~\ref{tab:correct}
+summarises the cases; the raw records are in \texttt{e1\_correctness.jsonl} and
+\texttt{e0\_traces.jsonl}.
+
+\begin{table}[t]
+\caption{Output of each rung, compared by a hash of \texttt{filelist.txt} and of every
+listed \texttt{<inode>.txt}. Same letter = byte-identical output.}
+\label{tab:correct}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Case & (a) & (b) & (c) & (d)/(e) \\
+\midrule
+A: aligned \texttt{O\_DIRECT}, 60 files & X & X & X & X \\
+B: unaligned buffered requests & X & Y & X & Y \\
+C: tmpfs (no FIEMAP), 40 files & 40 & 40 & 40 & \textbf{0} files \\
+C: 9p (no FIEMAP), 30 files & 30 & 30 & 30 & \textbf{0} files \\
+D: unrelated \texttt{notes.txt} in cwd & kept & -- & kept & \textbf{re-sorted} \\
+E: 10{,}000 traced files & -- & -- & 1.1\,s & 25.8\,s \\
+E: 10{,}001 traced files & -- & -- & 0.9\,s & \textbf{hangs} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The extent lookup is extra work whose result nothing reads.}
+Upstream's analysis phase does not read extents (\S\ref{sec:background}). The
+parallel path does, writes them to a temporary directory that is never removed,
+sorts them there, and drops them: \texttt{merge.py}, \texttt{hotness.sh} and both
+migration scripts read only \texttt{filelist.txt} and the per-inode request files,
+and the migration scripts look the extents up again themselves. The only effect of
+the lookup on the result is a filter: a file whose FIEMAP call fails is left out of
+\texttt{filelist.txt}. On a file system without FIEMAP the parallel path therefore
+lists no files at all (case~C), while upstream lists all of them. This matters for
+the fork's own motivation, which names network file systems as the target; we
+observed it on tmpfs and on WSL's 9p file system.
+
+\paragraph{The two code paths disagree on unaligned requests.}
+Phase~1 rounds the end of each request up to a block boundary. Upstream computes
+\texttt{end += end \% 4096 - 1}, which for a 100-byte read at offset~0 gives
+\texttt{end} = 197; the fork computes \texttt{end += 4096 - ((end+1) \% 4096) - 1},
+which gives 4094. Neither gives 4095. Both paths of the fork use the second formula,
+so (b) and (d) agree with each other and differ from upstream on buffered workloads
+with unaligned requests (case~B). Upstream's own evaluation issues only 128\,KiB
+\texttt{O\_DIRECT} requests, which never reach either formula.
+
+\paragraph{The parallel engine deadlocks above its queue size.}
+\texttt{EnhancedParallelProcessor} puts every task into a bounded queue
+(\texttt{queue\_size} = 10{,}000) before it starts the worker threads, so the
+10{,}001st \texttt{put} blocks forever (case~E). When \texttt{--workers} is omitted,
+auto-tuning lowers the bound to 1{,}000 if less than 4\,GB of memory is available,
+so the limit can be a thousand traced files.
+
+\paragraph{The parallel path rewrites unrelated files.}
+Its third step sorts every \texttt{*.txt} file in the working directory, including
+files that are not analysis output (case~D).
+
+\paragraph{The trace itself loses and corrupts events.}
+These problems are upstream's and affect every rung equally.
+\begin{itemize}
+\item BCC's \texttt{trace} flushes its standard output only after printing its header,
+  and upstream stops the tracers with \texttt{kill} (SIGTERM); the \texttt{kill -INT}
+  in \texttt{analyze.sh} goes to \texttt{trace.sh}, which has already exited, and
+  background jobs of a non-interactive shell ignore SIGINT anyway. The last
+  block-buffered chunk of events is lost: 59 of the 8{,}192 reads of upstream's
+  \texttt{read\_seq} benchmark (the end of the file), and all events of a workload
+  with a single read. Setting \texttt{PYTHONUNBUFFERED=1} for the tracers recovers
+  the tail but slows the consumer enough that BCC drops samples at high event rates
+  (1{,}918 during \texttt{tar}).
+\item \texttt{trace.sh} prints the file position with \texttt{\%u}, a 32-bit format
+  for the 64-bit \texttt{loff\_t}: a read at 5\,GiB is recorded at 1\,GiB.
+\item Trace lines carry an inode number but no device number. The traced processes
+  also read shared libraries and locale files on the root file system (between 2
+  and 89 distinct such inodes per trace in our six workloads), and any of those numbers that
+  also exists under \texttt{/mnt} is attributed to the wrong file.
+\item When the two tracers start at the same time on a kernel without a usable
+  header tree (as in WSL2), BCC's fallback to the \texttt{kheaders} module races
+  between them and one tracer fails to compile, silently losing all reads or all
+  writes. We avoid this by pointing \texttt{BCC\_KERNEL\_SOURCE} at headers
+  extracted once.
+\end{itemize}
+
+\paragraph{The rewrite.}
+Rung (c) produced the same bytes as upstream in every case above, including
+case~B, because it reproduces upstream's formula; we kept the bug on purpose so that
+the timing comparison is between equal outputs.

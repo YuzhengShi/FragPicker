@@ -35,6 +35,16 @@ RUNG_LABEL = {
 RUNG_ORDER = ["a", "b", "c", "d1", "d4", "d8", "d16", "e8"]
 
 NUMBERS = {}
+EXCLUDE = {}
+
+
+def load(path):
+    """load_jsonl with the documented exclusions of study/data/EXCLUDE.json applied."""
+    rows = load_jsonl(path)
+    ex = EXCLUDE.get(os.path.basename(path))
+    if ex and "ts_before" in ex:
+        rows = [r for r in rows if r.get("ts") is None or r["ts"] >= ex["ts_before"]]
+    return rows
 
 
 def num(key, value, src):
@@ -72,7 +82,7 @@ def e1(data, out):
     p = os.path.join(data, "e1_correctness.jsonl")
     if not os.path.exists(p):
         return
-    rows = [r for r in load_jsonl(p) if "rung" in r]
+    rows = [r for r in load(p) if "rung" in r]
     cases = []
     for r in rows:
         if r["case"] not in cases:
@@ -83,7 +93,7 @@ def e1(data, out):
         for r in [x for x in rows if x["case"] == c]:
             lines.append("| %s | %s | %s | %d | `%s` | %d |" % (
                 c, r["rung"], r["status"], r["filelist_n"], r["digest"], r["leaked_tmpdirs"]))
-    extra = [r for r in load_jsonl(p) if r.get("case") == "D_stale_txt_in_cwd" and "stale_txt_after" in r]
+    extra = [r for r in load(p) if r.get("case") == "D_stale_txt_in_cwd" and "stale_txt_after" in r]
     if extra:
         lines.append("")
         lines.append("Case D, content of an unrelated `notes.txt` (`5\\n3\\n1\\n` before the run):")
@@ -103,7 +113,7 @@ def e0(data, out):
     p = os.path.join(data, "e0_traces.jsonl")
     if not os.path.exists(p):
         return
-    rows = load_jsonl(p)
+    rows = load(p)
     full = {r["workload"]: r for r in rows if r.get("variant") == "unbuffered"}
     shipped = {r["workload"]: r for r in rows if r.get("variant") == "as_shipped"}
     lines = ["| workload | L (complete) | L as shipped (lost) | files in trace | of them on /mnt | "
@@ -132,7 +142,7 @@ def e2(data, out, fname="e2_ladder.jsonl", tag="e2"):
     p = os.path.join(data, fname)
     if not os.path.exists(p):
         return
-    rows = [r for r in load_jsonl(p) if r.get("status") == "ok"]
+    rows = [r for r in load(p) if r.get("status") == "ok"]
     cells = collections.defaultdict(list)
     for r in rows:
         cells[(r["fs"], r["T"], r["F"], r["cache"], r.get("delay_ms"), r["rung"])].append(r["wall_s"])
@@ -197,7 +207,7 @@ def e3(data, out):
     p = os.path.join(data, "e3_phase1.jsonl")
     if not os.path.exists(p):
         return
-    rows = load_jsonl(p)
+    rows = load(p)
     t = [r for r in rows if r.get("kind") == "time"]
     st = [r for r in rows if r.get("kind") == "strace"]
     cells = collections.defaultdict(list)
@@ -247,7 +257,7 @@ def e4(data, out):
     p = os.path.join(data, "e4_fiemap.jsonl")
     if not os.path.exists(p):
         return
-    rows = load_jsonl(p)
+    rows = load(p)
     lay = {(r["fs"], r["blocks"]): r for r in rows if r.get("kind") == "layout"}
     t = [r for r in rows if r.get("kind") == "time"]
     cells = collections.defaultdict(list)
@@ -292,7 +302,7 @@ def e5(data, out):
     p = os.path.join(data, "e5_latency.jsonl")
     if not os.path.exists(p):
         return
-    rows = load_jsonl(p)
+    rows = load(p)
     cells = collections.defaultdict(list)
     io = collections.defaultdict(list)
     for r in rows:
@@ -342,7 +352,7 @@ def e2real(data, out):
     p = os.path.join(data, "e2_real.jsonl")
     if not os.path.exists(p):
         return
-    rows = [r for r in load_jsonl(p) if r.get("status") == "ok"]
+    rows = [r for r in load(p) if r.get("status") == "ok"]
     cells = collections.defaultdict(list)
     steps = collections.defaultdict(lambda: collections.defaultdict(list))
     for r in rows:
@@ -354,16 +364,18 @@ def e2real(data, out):
                 steps[k[:2]][s].append(r[s])
         elif r["rung"] == "pipe_c":
             cells[k].append(r["total_s"])
+        elif r["rung"] == "p1_a":
+            cells[k].append(r["phase1_s"])
         else:
             cells[k].append(r["wall_s"])
-    order = ["a", "b", "c", "d1", "d8", "d16", "e8", "pipe_a", "pipe_c"]
+    order = ["a", "p1_a", "b", "c", "d1", "d8", "d16", "e8", "pipe_a", "pipe_c"]
     wl = []
     for r in rows:
         if r["workload"] not in wl:
             wl.append(r["workload"])
     Ls = {r["workload"]: r["L"] for r in rows}
     lines = ["| workload | L | cache | " + " | ".join(RUNG_LABEL.get(x, {"pipe_a": "upstream pipeline",
-             "pipe_c": "rewrite pipeline"}.get(x, x)) for x in order) + " |",
+             "pipe_c": "rewrite pipeline", "p1_a": "upstream Phase 1 only"}.get(x, x)) for x in order) + " |",
              "|---|---|---|" + "---|" * len(order)]
     for w in wl:
         for cache in ("warm", "cold"):
@@ -398,6 +410,9 @@ def main():
     ap.add_argument("--data", default=os.path.join(HERE, "..", "data"))
     ap.add_argument("--out", default=os.path.join(HERE, ".."))
     a = ap.parse_args()
+    exf = os.path.join(a.data, "EXCLUDE.json")
+    if os.path.exists(exf):
+        EXCLUDE.update(json.load(open(exf)))
     for f in (e1, e0, e2, e2real, e3, e4, e5):
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")

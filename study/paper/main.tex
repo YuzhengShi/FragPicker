@@ -1,0 +1,43 @@
+\documentclass[sigconf,nonacm]{acmart}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xspace}
+
+\newcommand{\up}{upstream\xspace}
+
+\begin{document}
+
+\title{Sleeping Is Not I/O: Where a Selective Defragmenter's Analysis Time Goes,
+and Why Threads Did Not Help}
+
+\author{Yuzheng Shi}
+\affiliation{%
+  \institution{Khoury College of Computer Sciences, Northeastern University}
+  \city{Vancouver}
+  \country{Canada}}
+
+\input{sec-abstract}
+
+\maketitle
+
+\input{sec-intro}
+\input{sec-background}
+\input{sec-method}
+\input{sec-correct}
+\input{sec-results}
+\input{sec-discussion}
+\input{sec-threats}
+\input{sec-related}
+\input{sec-conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\appendix
+\input{sec-artifact}
+
+\end{document}
