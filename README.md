@@ -94,14 +94,14 @@ A module overview and a longer listing of the repository are in [docs/LAYOUT.md]
 
 ## Installation
 
-Requirements: Linux, Python 3, and the `find` command. The FIEMAP interface needs Linux 2.6.28 or later and a filesystem that supports it. This repository has no `requirements.txt`; the analysis code imports PyYAML, and other packages are optional.
+Requirements: Linux, Python 3, and the `find` command. The FIEMAP interface needs Linux 2.6.28 or later and a filesystem that supports it. The Python packages are listed in [`requirements.txt`](requirements.txt): PyYAML and psutil are needed by the analyzer, the rest are optional.
 
 ```bash
 git clone -b parallel-analysis https://github.com/YuzhengShi/FragPicker.git
 cd FragPicker
 
-pip install pyyaml                          # needed by the analyzer
-pip install psutil matplotlib numpy flask   # optional: profiling, plots, web dashboard
+pip install -r requirements.txt            # pyyaml, psutil
+pip install matplotlib numpy flask pytest  # optional: charts, web dashboard, tests
 
 python3 src/analysis/processing.py --help
 ```

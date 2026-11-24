@@ -1,0 +1,16 @@
+# Python packages for the parallel analysis (src/analysis/parallel_analyzer).
+# Install with: pip install -r requirements.txt
+
+# Needed: imported by parallel_analyzer/config.py.
+pyyaml
+
+# Needed: Config.auto_tune() imports it, and the modules call that when they
+# load. Without it, processing.py reports that the optimization modules are
+# not available and --parallel does not run.
+psutil
+
+# Optional, install only for the part you use:
+#   matplotlib  charts from benchmarks/analyze_fragmentation.py
+#   numpy       the same script
+#   flask       web dashboard in tools/dashboard.py
+#   pytest      the tests: python3 -m pytest tests/ -v

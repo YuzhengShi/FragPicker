@@ -21,6 +21,7 @@ benchmarks/                     benchmark scripts
 benchmark_results/              raw JSON and charts from the runs in the README
 tools/                          analyzer.py, dashboard.py, profiler.py
 config/default.yaml             default configuration
+requirements.txt                Python packages (PyYAML and psutil needed, others optional)
 evaluation/, etc/, slides/      upstream experiments, macOS notes and slides
 ```
 

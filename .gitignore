@@ -4,6 +4,7 @@
 *.merged
 *.sorted
 *.txt
+!requirements.txt
 *.frag
 *.trace
 

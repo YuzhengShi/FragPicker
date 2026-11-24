@@ -76,5 +76,5 @@ result = processor.process_files(file_list)   # file_list: (inode, request_count
 
 - `Module not found: parallel_analyzer`: run from `src/analysis`.
 - FIEMAP errors: the filesystem or kernel may not support FIEMAP (Linux 2.6.28 or later is required). Try ext4.
-- `ERROR: Parallel mode requested but optimization modules not found`: an import in `parallel_analyzer` failed, most often PyYAML. Run `pip install pyyaml`.
+- `ERROR: Parallel mode requested but optimization modules not found`: an import in `parallel_analyzer` failed, most often a missing package (PyYAML or psutil). Run `pip install -r requirements.txt`.
 - Parallel mode is not faster: expected on fast local storage. See the results in the [README](../README.md#results).
