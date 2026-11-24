@@ -19,11 +19,12 @@ to find the traced files without walking the tree, which the fork does not have;
 the FIEMAP calls, the part the fork parallelised, need no read of their own here,
 because these files' extents fit in their inodes (\S\ref{sec:fiemap}).
 
-\begin{table}[t]
+\begin{table*}[t]
+\centering
 \caption{A cold run of the scattered case split into the inode-map walk and the
 per-file lookups (5\,ms configured delay), and the lookups alone when the paths are
 already known. Medians of five runs.}
 \label{tab:decompose}
 \small
 \inputtable{../results/tab_decompose.tex}
-\end{table}
+\end{table*}

@@ -47,7 +47,7 @@ with unaligned requests (case~B). Upstream's own evaluation issues only 128\,KiB
 \texttt{O\_DIRECT} requests, which never reach either formula.
 
 \paragraph{The parallel engine deadlocks above its queue size.}
-\texttt{EnhancedParallelProcessor} puts every task into a bounded queue
+\texttt{EnhancedParallel\allowbreak Processor} puts every task into a bounded queue
 (\texttt{queue\_size} = 10{,}000) before it starts the worker threads, so the
 10{,}001st \texttt{put} blocks forever (case~E). When \texttt{--workers} is omitted,
 auto-tuning lowers the bound to 1{,}000 if less than 4\,GB of memory is available,
@@ -66,7 +66,7 @@ These problems are upstream's and affect every rung equally.
   background jobs of a non-interactive shell ignore SIGINT anyway. The last
   block-buffered chunk of events is lost: 59 of the 8{,}192 reads of upstream's
   \texttt{read\_seq} benchmark (the end of the file), and all events of a workload
-  with a single read. Setting \texttt{PYTHONUNBUFFERED=1} for the tracers recovers
+  with a single read. Setting \texttt{PYTHON\allowbreak UNBUFFERED=1} for the tracers recovers
   the tail but slows the consumer enough that BCC drops samples at high event rates
   (it reported 3{,}739 lost samples during \texttt{tar}, about 13\% of the events).
 \item \texttt{trace.sh} prints the file position with \texttt{\%u}, a 32-bit format

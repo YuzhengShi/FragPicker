@@ -19,5 +19,4 @@ request is too large for CPython 3.12 and 3.13 to release the interpreter lock d
 the call: 16 threads gain 1.00$\times$, against 14.6$\times$ with a 984-byte request.
 We also find that the shipped tracing procedure loses the last buffered chunk of events
 and wraps file positions above 4\,GiB. All scripts, traces and raw data are released.
-% recheck 4--191x after the sqlite3 repeat
 \end{abstract}

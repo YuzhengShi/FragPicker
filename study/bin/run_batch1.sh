@@ -9,8 +9,12 @@ log=/root/fpstudy/batch1.log
 echo "batch1 start $(date -u +%FT%TZ)" >> $log
 step() { echo "=== $(date -u +%FT%TZ) $*" >> $log; bash $R "$@" >> $log 2>&1; echo "=== rc=$? $(date -u +%FT%TZ)" >> $log; }
 step e5_latency.py --reps 5
-step e4_fiemap.py --reps 5
-step e3_phase1.py --reps 10
+# The original run used the defaults (E4 on all four file systems, E3 on the root file
+# system and four loop file systems up to 10^6 lines). Its F2FS rows of E4 and loop rows
+# of E3 are excluded (data/EXCLUDE.json) and were re-measured in batch 2, so a re-run
+# only needs these:
+step e4_fiemap.py --fs ext4,xfs,btrfs --reps 5
+step e3_phase1.py --fs root --reps 10
 step e2_ladder.py --T 10000 --F 1,10,100,1000,10000 --cache warm --reps 10 --budget-s 600
 step e2_real.py --reps 7
 step e2_ladder.py --T 10000 --F 1,10,100,1000,10000 --cache cold --reps 10 --budget-s 600

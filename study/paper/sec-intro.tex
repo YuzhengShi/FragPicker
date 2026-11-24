@@ -38,7 +38,6 @@ Our findings:
   a 226-line rewrite that produces byte-identical output runs upstream's
   \texttt{processing.py} 4--191$\times$ faster, and 19--26$\times$ faster than the best
   parallel configuration (\S\ref{sec:anatomy}, \S\ref{sec:ladder}).
-  % recheck both ranges after the sqlite3 repeat
 \item \textbf{The speedup came from the latency model.} With a 5\,ms user-space delay
   we reproduce a 15.5$\times$ speedup; with the same delay injected at the block
   layer, the lookups of 1{,}000 files created together read 192\,KiB from the device

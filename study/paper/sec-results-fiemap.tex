@@ -15,20 +15,30 @@ device reads per file in a cold pass. One thread unless stated.}
 \inputtable{../results/tab_fiemap.tex}
 \end{table}
 
-\paragraph{Warm, it is microseconds.} With the cache warm, a lookup costs
-16--25\,\textmu s for up to eight extents and grows with the extent count, because
-the ioctl copies every extent out (about 0.6\,ms for 512 extents). This is the
-normal case for FragPicker: the analysis runs right after the traced application has
-read these files, so their inodes and extent blocks are in memory.
+\paragraph{Warm, it is microseconds.} With the cache warm, a lookup on ext4 or XFS
+costs 16--25\,\textmu s for up to eight extents (30--44\,\textmu s on Btrfs) and grows
+with the extent count, because the ioctl copies every extent out (about 0.6\,ms for
+512 extents). This is the normal case for FragPicker: the analysis runs right after
+the traced application has read these files, so their inodes and extent blocks are in
+memory. F2FS is the exception: about 0.4\,ms per lookup even for one extent; we did
+not find where that time goes.
 
 \paragraph{Cold, the cost is the extent tree, not the inode.} With the cache cold,
 files whose extents fit in the inode (four on ext4, more on XFS) still need almost no
-device reads: \textbf{0.01} reads per file on ext4 and \textbf{0.04} on XFS, because
-inode-table readahead brings in the inodes of hundreds of neighbouring files at once.
-Once the extents spill into a tree block, every file needs one read of its own (1.0
-per file on both, two to three for 512 extents), and the lookup cost rises to
-0.4--1.6\,ms on our loop device.
+device reads: 0.01 reads per file on ext4 and 0.04 on XFS, because inode-table
+readahead brings in the inodes of hundreds of neighbouring files at once. Once the
+extents spill into a tree block, every file needs one read of its own (1.0 per file
+on both, two to three for 512 extents), and the lookup cost rises to 0.4--1.6\,ms on
+our loop device. F2FS reads one block per file at every extent count, the file's
+inode, which F2FS stores in a block of its own.
 
-\paragraph{Threads never helped.} In every row, four and sixteen threads were
-\emph{slower} per file than one, even in the rows where each file needs its own
-device read. \S\ref{sec:gil} explains why.
+\paragraph{Threads helped only where the wait is outside FIEMAP.} On ext4 and XFS,
+four and sixteen threads were \emph{slower} per file than one in every row
+(0.21--0.96$\times$), even in the rows where each file needs its own device read. On
+F2FS they were 1.4--1.6$\times$ faster in every row, and on Btrfs with 128 or more
+extents 1.1--1.2$\times$. The difference matches where the wait happens: F2FS's one
+read per file comes in through the \texttt{stat} and \texttt{open} calls, which release
+the interpreter lock, while the read that remains on ext4 and XFS, the extent-tree
+block, happens inside FIEMAP, where the fork's request keeps the lock held
+(\S\ref{sec:gil}). We did not time the four calls separately, so this attribution is
+an inference from the read counts.

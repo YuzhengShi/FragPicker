@@ -15,7 +15,7 @@ Everything needed to repeat this study is in the \texttt{study/} directory of th
   dropped and why.
 \item \texttt{study/analysis/report.py}: regenerates every table, every figure and
   \texttt{results/numbers.json}, which maps each number quoted in the text to the
-  file it came from; \texttt{study/analysis/perturb.py} checks the raw data for
+  file it came from; \texttt{study/\allowbreak analysis/\allowbreak perturb.py} checks the raw data for
   windows of external load (\S\ref{sec:method}).
 \end{itemize}
 The code under test is exported unmodified from git (upstream 796df86, fork
@@ -25,4 +25,5 @@ kernel headers, runs the driver in a private mount namespace with the file syste
 under test at \texttt{/mnt}, and copies the results back. \texttt{study/README.md}
 lists the packages and the exact invocations; \texttt{study/bin/run\_batch1.sh},
 \texttt{run\_batch2.sh} and \texttt{run\_batch3.sh} run every local experiment after
-E0 and E1, one at a time, in about \textbf{[X]} hours on our machine.
+E0 and E1, one at a time, in about ten hours on our machine; their logs are in
+\texttt{study/data/logs/}.

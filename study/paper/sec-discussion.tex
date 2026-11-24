@@ -1,6 +1,16 @@
 \section{Discussion}
 \label{sec:discussion}
 
+\paragraph{How our predictions fared.} Of the predictions in \S\ref{sec:method}, RQ2
+and RQ4 held as written. RQ1 held in its shape but not in its size: Phase~1 costs
+68--79\,\textmu s per trace line, not 10--30, because of the one-byte reads we had not
+anticipated; Phase~2's per-file cost (7.2\,ms) and its growth with the tree held. RQ3
+held on ext4 and XFS and failed on F2FS, whose lookups cost 0.4\,ms even warm and need
+one device read per file even for files created together. The interpreter-lock result
+of \S\ref{sec:gil} was not predicted: we found the cause while explaining why threads
+never helped in E4, and designed E8 afterwards to test it, so it should be read as
+exploratory.
+
 \paragraph{When could threads pay?}
 Threads overlap waiting, so they help only when the analysis waits on many
 independent device reads that the device can serve concurrently. In FragPicker's

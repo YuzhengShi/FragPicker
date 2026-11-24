@@ -31,18 +31,21 @@ a time, nothing gains more than 1.09$\times$. The fork's process engine reaches
 did not investigate. With no delay, the fork's thread pool is slower than one thread
 (0.107\,s against 0.076\,s).
 
-\begin{table}[t]
+\begin{table*}[t]
+\centering
 \caption{Speedup of 16 workers over one for FIEMAP calls that each wait for one device
-read, by request size, threads or processes, and device. Median of five passes, 95\%
-bootstrap interval.}
+read, by request size, threads or processes, and device; the first column is the time
+of one thread. Medians of five passes (95\% bootstrap intervals in
+\texttt{results/numbers.json}).}
 \label{tab:gil}
 \small
 \inputtable{../results/tab_gil.tex}
-\end{table}
+\end{table*}
 
-Two consequences follow. First, the condition the fork needs most, that waits overlap,
-fails exactly for the files FragPicker exists to fix: the fragmented ones, whose
-extents do not fit in the inode. Second, the user-space delay hid this as well,
+Two consequences follow. First, on ext4 and XFS the condition the fork needs most,
+that waits overlap, fails exactly for the files FragPicker exists to fix: the
+fragmented ones, whose extents do not fit in the inode, so that their one remaining
+read happens inside FIEMAP (\S\ref{sec:fiemap}). Second, the user-space delay hid this as well,
 because \texttt{time.sleep} releases the GIL and runs before the ioctl. The fork's
 process engine would overlap the waits, but \texttt{--parallel} does not use it, and it
 would overlap work that the analysis does not need (\S\ref{sec:correct}).

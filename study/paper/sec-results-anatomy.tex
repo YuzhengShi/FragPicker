@@ -34,8 +34,10 @@ pipeline takes 165\,s: 97\,s in Phase~2, 56\,s in \texttt{hotness.sh} and 10\,s 
 \texttt{merge.py}, against 1.7\,s in Phase~1. The rewrite does all three steps in
 1.28\,s (129$\times$, 95\% CI 121--133). For \texttt{fio}'s 1{,}000 files the pipeline
 takes 40.4\,s against 0.62\,s (65$\times$). When a workload touches one file, Phase~1
-dominates instead: 83\% of the 0.75\,s for \texttt{read\_seq}\textbf{[; sqlite3 pending
-its repeat, \S\ref{sec:method}]}. The best \texttt{--parallel} setting makes
+dominates instead: 83\% of the 0.75\,s for \texttt{read\_seq} and 92\% of the 8.6\,s
+for \texttt{sqlite3}, whose trace has 160{,}935 lines (69\% of them for its database
+file, the only traced file on the test file system). The
+best \texttt{--parallel} setting makes
 \texttt{processing.py} 7.4$\times$ faster than upstream on \texttt{tar} (13.4\,s against
 98.7\,s) and 3.4$\times$ on \texttt{fio}, but slower than upstream on every one-file
 trace (1.81\,s against 0.67\,s for \texttt{read\_seq}), because of its one-second floor

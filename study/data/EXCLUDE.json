@@ -25,5 +25,14 @@
       "e3_phase1_fs.jsonl"
     ],
     "reason": "Batch 1 ran E3 with L up to 10^6 on every file system; to save about two hours it was stopped once the WSL root file system was done, and the four loop file systems were re-run with L up to 10^5 into e3_phase1_fs.jsonl. Rows of the loop file systems written before the stop are dropped here."
+  },
+  "e2_real.jsonl": {
+    "where": {
+      "workload": "sqlite3"
+    },
+    "append": [
+      "e2_real_sqlite3.jsonl"
+    ],
+    "reason": "External load on the host from about 16:05 to 16:15 UTC on 2026-11-24 (no other study process ran then) slowed every rung of the sqlite3 replay about 1.6x; analysis/perturb.py flags the two five-minute windows. The workload was repeated in batch 3 into e2_real_sqlite3.jsonl (no window flagged there), which replaces all of its rows, warm and cold. The rows stay in the raw file."
   }
 }
