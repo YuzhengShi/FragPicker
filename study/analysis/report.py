@@ -565,6 +565,96 @@ def e7(data, out):
     write_md(out, "e7_calibrate.md", "\n".join(lines) + "\n")
 
 
+def e7b(data, out):
+    p = os.path.join(data, "e7b_delay.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    base = {r["iodepth"]: r["lat_mean_ms"] for r in rows if r["model"] == "loop"}
+    lines = ["| model | configured delay (ms) | QD1 mean latency (ms) | effective delay (ms) | "
+             "QD16 IOPS | requests in flight at QD16 |", "|---|---|---|---|---|---|"]
+    by = {}
+    for r in rows:
+        by[(r["model"], r["delay_ms"], r["iodepth"])] = r
+    for (m, d, qd), r in sorted(by.items()):
+        if qd != 1:
+            continue
+        r16 = by.get((m, d, 16))
+        eff = r["lat_mean_ms"] - base.get(1, 0)
+        inflight = r16["iops"] * r16["lat_mean_ms"] / 1000 if r16 else float("nan")
+        lines.append("| %s | %d | %.3f | %.2f | %.0f | %.1f |" % (
+            m, d, r["lat_mean_ms"], eff, r16["iops"] if r16 else float("nan"), inflight))
+        num("e7b.%s.d%d.effective_ms" % (m, d), eff, "e7b_delay.jsonl")
+        num("e7b.%s.d%d.inflight_qd16" % (m, d), inflight, "e7b_delay.jsonl")
+    if rows:
+        num("e7b.config_hz", rows[0]["config_hz"], "e7b_delay.jsonl")
+    write_md(out, "e7b_delay.md", "\n".join(lines) + "\n")
+
+
+def e8(data, out):
+    p = os.path.join(data, "e8_gil.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    lay = [r for r in rows if r.get("kind") == "layout"]
+    t = [r for r in rows if r.get("kind") == "time"]
+    cells = collections.defaultdict(list)
+    for r in t:
+        cells[(r["device"], r["variant"], r["workers"])].append(r["wall_s"])
+    devs = [d for d in ("plain", "dmdelay", "nbd_qd1", "nbd_par") if any(k[0] == d for k in cells)]
+    variants = [v for v in ("fork", "big", "small", "big_mp", "fork_mp") if any(k[1] == v for k in cells)]
+    vlab = {"fork": "fork engine's lookup, threads", "big": "1,824-byte request, threads",
+            "small": "984-byte request, threads", "big_mp": "1,824-byte request, processes",
+            "fork_mp": "fork's process engine"}
+    lines = ["| device | variant | 1 worker (s) | 4 | 16 | speedup 16 vs 1 |", "|---|---|---|---|---|---|"]
+    for dv in devs:
+        for v in variants:
+            x1 = cells.get((dv, v, 1)); x4 = cells.get((dv, v, 4)); x16 = cells.get((dv, v, 16))
+            if not x1:
+                continue
+            sp = ratio_ci(x1, x16) if x16 else (float("nan"),) * 3
+            lines.append("| %s | %s | %.3f | %.3f | %.3f | %.2f [%.2f, %.2f] |" % (
+                dv, vlab[v], median_ci(x1)[0], median_ci(x4)[0] if x4 else float("nan"),
+                median_ci(x16)[0] if x16 else float("nan"), sp[0], sp[1], sp[2]))
+            num("e8.%s.%s.speedup16" % (dv, v), list(sp), "e8_gil.jsonl")
+            num("e8.%s.%s.w1_s" % (dv, v), median_ci(x1)[0], "e8_gil.jsonl")
+    if lay:
+        L0 = lay[-1]
+        lines.append("")
+        lines.append("%d files, %d extents each (min %d, max %d); request sizes %s bytes; "
+                     "1,824- and 984-byte requests returned identical extents: %s; Python %s." % (
+                         L0["N"], L0["extents_median"], L0["extents_min"], L0["extents_max"],
+                         L0["req_bytes"], L0["big_small_identical"], L0["python"]))
+        num("e8.layout", {k: L0[k] for k in ("N", "extents_median", "big_small_identical", "req_bytes", "python")},
+            "e8_gil.jsonl")
+    write_md(out, "e8_gil.md", "\n".join(lines) + "\n")
+    if not devs:
+        return
+    fig, axs = plt.subplots(1, len(devs), figsize=(1.9 * len(devs) + 0.6, 2.8), sharey=True)
+    if len(devs) == 1:
+        axs = [axs]
+    dlab = {"plain": "loop device, no delay", "dmdelay": "dm-delay", "nbd_qd1": "one request at a time",
+            "nbd_par": "32 requests in flight"}
+    for ax, dv in zip(axs, devs):
+        for i, v in enumerate(variants):
+            ws = sorted(w for (d_, v_, w) in cells if d_ == dv and v_ == v)
+            x1 = cells.get((dv, v, 1))
+            if not x1 or not ws:
+                continue
+            ys = [ratio_ci(x1, cells[(dv, v, w)])[0] for w in ws]
+            ax.plot(ws, ys, color=C[i], marker=MARK[i], ms=5, lw=1.6, label=vlab[v])
+        ax.axhline(1.0, color=INK2, lw=0.8, ls="--")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([1, 4, 16]); ax.set_xticklabels(["1", "4", "16"])
+        ax.set_title(dlab.get(dv, dv), fontsize=7.5, color=INK)
+        ax.set_xlabel("workers", fontsize=8)
+        style(ax)
+    axs[0].set_ylabel("speedup over 1 worker")
+    h, l_ = axs[0].get_legend_handles_labels()
+    fig.legend(h, l_, fontsize=6.5, frameon=False, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 0.0))
+    save(fig, out, "e8_gil")
+
+
 def tex_tables(out):
     """LaTeX tables for the paper, filled from NUMBERS only (so every cell traces back
     to numbers.json and from there to a raw file)."""
@@ -637,7 +727,7 @@ def main():
     exf = os.path.join(a.data, "EXCLUDE.json")
     if os.path.exists(exf):
         EXCLUDE.update(json.load(open(exf)))
-    for f in (e1, e0, e2, e2real, e3, e4, e5, e5b, e7):
+    for f in (e1, e0, e2, e2real, e3, e4, e5, e5b, e7, e7b, e8):
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")
     tex_tables(a.out)
