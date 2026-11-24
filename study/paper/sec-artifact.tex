@@ -25,5 +25,7 @@ kernel headers, runs the driver in a private mount namespace with the file syste
 under test at \texttt{/mnt}, and copies the results back. \texttt{study/README.md}
 lists the packages and the exact invocations; \texttt{study/bin/run\_batch1.sh},
 \texttt{run\_batch2.sh} and \texttt{run\_batch3.sh} run every local experiment after
-E0 and E1, one at a time, in about ten hours on our machine; their logs are in
-\texttt{study/data/logs/}.
+E0 and E1, one at a time, in about ten hours on our machine; \texttt{run\_batch4.sh} and
+\texttt{run\_batch5.sh} run the exploratory ones of \S\ref{sec:explore} in under an
+hour, and \texttt{remote\_batch\_e6.sh} the real-disk subset in about 25 minutes. Their
+logs are in \texttt{study/data/logs/}.

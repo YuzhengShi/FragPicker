@@ -46,10 +46,16 @@ Our findings:
 \item \textbf{Real device waits overlapped little.} In a scattered tree, the reads
   happen in the tree walk, before the threads start (\S\ref{sec:decompose}). Where
   every lookup must read an extent block of its own, the fork's 1{,}824-byte FIEMAP
-  request keeps CPython's interpreter lock held through the wait: 16 threads gain
-  1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}). The
-  largest gain we saw for the fork's own lookups was 1.4--1.6$\times$, on F2FS
+  request keeps CPython 3.12's interpreter lock held through the wait: 16 threads gain
+  1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}); under
+  CPython 3.14, which releases the lock for large buffers, the same code gains
+  13--15$\times$ (\S\ref{sec:gilpy}). On the Python 3.12 that we evaluated, the largest
+  gain we saw for the fork's own lookups was 1.4--1.6$\times$, on F2FS
   (\S\ref{sec:fiemap}).
+\item \textbf{Threads belong in the tree walk} (exploratory). A walk split across four
+  threads overlaps the walk's device reads 3.9$\times$ under dm-delay, and one on 16
+  threads is 6.1$\times$ faster than on one on a real network disk; the fork
+  parallelised the lookups instead (\S\ref{sec:walk}, \S\ref{sec:realdisk}).
 \item \textbf{The trace itself is lossy.} Upstream's stop procedure loses the last
   buffered chunk of events, positions above 4\,GiB wrap around, and inode numbers
   from other file systems can be attributed to files under \texttt{/mnt}

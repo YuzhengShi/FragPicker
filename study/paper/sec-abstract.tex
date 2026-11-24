@@ -17,7 +17,10 @@ the cache are slowed, the lookups of 1{,}000 files created together read 192\,Ki
 the device in all, and 16 threads run at 0.47$\times$ the speed of one instead of
 15.5$\times$ faster. Where every lookup does wait for the device, the fork's FIEMAP
 request is too large for CPython 3.12 and 3.13 to release the interpreter lock during
-the call: 16 threads gain 1.00$\times$, against 14.6$\times$ with a 984-byte request.
-We also find that the shipped tracing procedure loses the last buffered chunk of events
-and wraps file positions above 4\,GiB. All scripts, traces and raw data are released.
+the call: 16 threads gain 1.00$\times$, against 14.6$\times$ with a 984-byte request and
+13--15$\times$ for the same code under CPython 3.14. Exploratory runs, including one on
+a real network disk, place the waits that threads can overlap in the tree walk, which a
+few threads speed up 3.9--6.1$\times$. We also find that the shipped tracing procedure
+loses the last buffered chunk of events and wraps file positions above 4\,GiB. All
+scripts, traces and raw data are released.
 \end{abstract}

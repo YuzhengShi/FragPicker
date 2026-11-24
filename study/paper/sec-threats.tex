@@ -1,9 +1,13 @@
 \section{Threats to validity}
 \label{sec:threats}
 
-\paragraph{Virtualised platform, no real slow device.} All measurements ran in WSL2, a
-Hyper-V virtual machine, on one NVMe SSD; we did not measure a hard disk, an SD card or
-network block storage. Process creation, system
+\paragraph{Virtualised platforms, one real slow device.} All measurements except those
+of \S\ref{sec:realdisk} ran in WSL2, a Hyper-V virtual machine, on one NVMe SSD; we did
+not measure a hard disk or an SD card. The one slow device we measured, network block
+storage under an OpenStack virtual machine, differs from the laptop in kernel (7.0),
+interpreter (3.14.4) and processor, served other programs during the runs, cached
+recently written data below the guest, and was measured with three repetitions and no
+global cache drop, so its interpreter and tools were never cold. Process creation, system
 calls and page-cache behaviour are those of a real Linux kernel, so the CPU-bound
 costs that dominate Phases~1 and~2 should carry over to bare metal, but their
 absolute values will differ. ``Cold'' runs drop the guest's caches and remount the

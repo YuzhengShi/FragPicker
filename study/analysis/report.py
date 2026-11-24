@@ -877,7 +877,9 @@ def e6_latency(data, out):
 
 def gil_by_python(out):
     """The 16-worker speedups of E8 for each interpreter and device (from NUMBERS)."""
-    tags = [("e8", "3.12"), ("e8py314", "3.14"), ("e8py314t", "3.14t (no GIL)"), ("e6gil", "3.14, real disk")]
+    # E6's E8 run (e6gil) is left out: on that host most reads of the freshly written files
+    # came from a cache below the guest and the 16-worker intervals span 0.3x to 58x
+    tags = [("e8", "3.12"), ("e8py314", "3.14"), ("e8py314t", "3.14t (no GIL)")]
     devs = [("plain", "loop, no delay"), ("dmdelay", "dm-delay"), ("nbd_qd1", "one at a time"),
             ("nbd_par", "32 in flight")]
     vars_ = [("fork", "fork lookup, thr."), ("big", "1,824\\,B, thr."), ("small", "984\\,B, thr."),

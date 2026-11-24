@@ -6,8 +6,8 @@ call releases the global interpreter lock (GIL) so that another thread can run. 
 CPython 3.12.x and 3.13.x, \texttt{fcntl.ioctl} releases it only when it can copy the
 argument into a 1{,}024-byte stack buffer. A larger writable buffer is passed to the
 kernel in place, and the call runs with the GIL held (\texttt{fcntl\_ioctl\_impl} in
-\texttt{Modules/fcntlmodule.c}, unchanged from v3.12.3 to v3.13.9; v3.14.0 releases
-the GIL on this path, which we read in the source but did not run). The fork's FIEMAP
+\texttt{Modules/fcntlmodule.c}, unchanged from v3.12.3 to v3.13.9; v3.14 releases
+the GIL on this path, which we confirm by running it in \S\ref{sec:gilpy}). The fork's FIEMAP
 request has room for 32 extents, $32 + 32\cdot56 = 1{,}824$ bytes, so every FIEMAP call
 holds the lock for as long as the kernel takes, including any device read for an
 extent-tree block. The largest request that takes the releasing path holds 17 extents

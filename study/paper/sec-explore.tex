@@ -1,0 +1,101 @@
+\section{Exploratory results}
+\label{sec:explore}
+
+The experiments in this section were designed after the results above had been seen,
+to test explanations we had offered for them; none was among our predictions
+(\S\ref{sec:method}). They ran in two later batches on the same laptop and, for
+\S\ref{sec:realdisk}, on a second machine.
+
+\subsection{The interpreter, run directly}
+\label{sec:gilpy}
+
+\S\ref{sec:gil} rests on reading CPython's source: 3.12 and 3.13 hold the GIL during
+an \texttt{ioctl} whose buffer exceeds 1{,}024 bytes, and 3.14 does not. We re-ran E8
+unchanged under CPython 3.14.10 and under its free-threaded build 3.14t (no GIL), both
+from the deadsnakes packages (Table~\ref{tab:gilpy}). Under 3.14 the fork's own lookup
+and the 1{,}824-byte request gain 13--15$\times$ with 16 threads on both devices that
+serve requests concurrently, nearly as much as the 984-byte request and as processes;
+under 3.12 they gain nothing. Without a GIL, 16 threads gain 3.8$\times$ even on the
+plain device, where every read is fast. On the one-request-at-a-time device no interpreter gains more
+than 1.11$\times$. The request size therefore mattered only through the interpreter
+lock, and only on 3.12 and 3.13.
+
+\begin{table}[t]
+\caption{E8 under three interpreters: speedup of 16 workers over one for FIEMAP calls
+that each wait for one device read (medians of five passes).}
+\label{tab:gilpy}
+\small
+\inputtable{../results/tab_gilpy.tex}
+\end{table}
+
+\subsection{Where each lookup waits}
+\label{sec:calls}
+
+E4 timed the fork's lookup as a whole. E9 runs each of its calls as its own pass over
+500 files (\texttt{stat} all, \texttt{open} all, FIEMAP all, \texttt{close} all) and
+counts device reads per pass. With 32 extents and a cold cache, the one read per file
+happens inside FIEMAP on ext4 and XFS (1.00 reads per file; \texttt{stat} reads 0.01 and
+0.04), and 16 threads do not make that pass faster (312 against 326\,\textmu s per file
+on ext4). On F2FS the read happens in \texttt{stat} (1.02 per file, at every extent
+count), and 16 threads make the \texttt{stat} pass 3.5--4.7$\times$ faster: this
+confirms the attribution of \S\ref{sec:fiemap}. On Btrfs the reads split between the
+two (0.18 and 0.08 per file).
+
+F2FS's FIEMAP itself costs 350--370\,\textmu s per call, warm or cold, with no device
+read, whether it asks for the whole address space or only up to the end of the file. A
+BPF probe (E9b) counts 878 calls to \texttt{f2fs\_map\_blocks} per FIEMAP for files of
+one and of 32 blocks alike: the walk does not depend on the file, which is why the cost
+is nearly the same for one to 32 extents in Table~\ref{tab:fiemap}.
+
+On every file system, 16 threads turn a warm \texttt{stat}, \texttt{open} or
+\texttt{close} of a few microseconds into about 60\,\textmu s per file, most likely the
+cost of passing the interpreter lock between 16 threads that each hold it only briefly.
+The same overhead makes threads slower than one wherever there is no wait to overlap.
+
+\subsection{Where threads could pay: the tree walk}
+\label{sec:walk}
+
+In the scattered case all device time is in the walk (\S\ref{sec:decompose}). E10
+replaces the fork's single \texttt{find} with an \texttt{os.scandir} walk whose
+top-level directories are split among threads; \texttt{opendir} and \texttt{readdir}
+release the GIL, and the inode map came out identical to \texttt{find}'s in every run.
+Under dm-delay the walk of 100{,}000 files takes 9.7\,s on one thread, 2.5\,s on four
+(3.9$\times$) and 4.4\,s on sixteen; with 32 requests in flight on NBD the figures are
+7.1, 1.8 and 4.6\,s. On the one-request-at-a-time device four or sixteen threads gain
+1.06$\times$, and on the plain loop device they are 2.6 and 7.4 times slower than one.
+Threads help the walk only when the device serves concurrent requests, and more of
+them than the walk can keep busy hurt. This is the part of the analysis the fork did
+not parallelise.
+
+\subsection{Inode readahead is the kernel's own parallelism}
+\label{sec:readahead}
+
+E11 repeats the cold runs under dm-delay with \texttt{inode\_readahead\_blks} from 0
+to 256 (the default is 32; the value in effect was read back from \texttt{sysfs}). In
+the scattered case, readahead reads 3.6 times more data than none (7{,}287 reads
+against 2{,}023 for the walk) and still makes the walk 1.7$\times$ faster (9.8 against
+16.2\,s), because the kernel issues those reads together. For files created together,
+the lookups read 75 blocks without readahead and 43 with the default, and 16 threads
+never gain more than 1.08$\times$ at any setting, probably because threads that each
+take every sixteenth file wait for the same inode-table block at the same time. The
+``nothing to overlap'' of \S\ref{sec:models} does not hinge on this tunable.
+
+\subsection{A real network disk}
+\label{sec:realdisk}
+
+Finally we ran a subset of the experiments on an OpenStack virtual machine whose disk
+is network block storage (8 vCPUs, Linux 7.0, CPython 3.14.4), while its usual services
+ran. Because it serves other programs we did no global cache drop: the file system under
+test is unmounted before every cold run, which empties its caches. Random 4\,KiB reads
+over a 2\,GiB region written just before took 35--52\,ms
+at the median and up to 1.9\,s at the 99th percentile, at 6--12 reads per second one at
+a time and 66--137 with 16 in flight, and the rate doubled between the start and the end
+of the run. Small working sets written just before came back far faster, apparently
+from a cache below the guest, which made the per-file FIEMAP passes too erratic to
+interpret (16-worker intervals from 0.3$\times$ to 58$\times$). The end-to-end results agree with the laptop's:
+with 1{,}000 traced files in a tree of 10{,}000 and a cold cache, upstream takes
+11.6\,s, the best parallel setting 2.42\,s and the rewrite 0.29\,s; the fork's engine
+gains 1.23$\times$ with 16 threads in the scattered case (8.35 against 6.79\,s); and the
+threaded walk of \S\ref{sec:walk} is 6.1$\times$ faster on 16 threads than on one and
+9.5$\times$ faster than \texttt{find} (1.17 against 11.1\,s), the largest gain from
+threads that we measured on a real device.
