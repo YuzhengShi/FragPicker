@@ -33,6 +33,29 @@ with \texttt{find} again, reads the file's extents with \texttt{filefrag -v}, an
 rewrites every hot window that crosses an extent boundary, after punching and
 re-allocating its blocks on in-place file systems such as ext4.
 
+\begin{table}[t]
+\caption{Work per traced file in each analysis step, counted with \texttt{strace -f}
+on 50 traced files (E1c). Upstream's per-file \texttt{find} also reads every
+directory entry under \texttt{/mnt}.}
+\label{tab:anatomy}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Step & processes & \texttt{openat} & per tree entry \\
+\midrule
+\texttt{processing.py} (upstream) & 3 & 117 & readdir, $\times F$ \\
+\texttt{merge.py} (upstream) & 1 & 39 & -- \\
+\texttt{hotness.sh} (upstream) & 10 & 174 & -- \\
+rewrite, all three steps & 0 & 4.7 & readdir, $\times 1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:anatomy} counts what these steps cost per traced file (totals divided
+by 50, so interpreter start-up is included): fourteen new processes, one of which
+walks the whole tree, and about 330 \texttt{openat} calls, most of them made by the
+new processes while they load their libraries.
+
 Two properties of this design matter below. First, the analysis phase never looks
 at file layout: extents are read only during migration. Second, the artifact's own
 evaluation traces one file per experiment (\texttt{evaluation/read\_benchmark}), so

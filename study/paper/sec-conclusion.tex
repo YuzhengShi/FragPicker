@@ -1,0 +1,13 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We set out to check a 12.74$\times$ speedup for parallel analysis in a selective
+defragmenter and found that the speedup belonged to the delay model, not to the
+storage. The parallel mode overlapped sleeps placed before an extent lookup that the
+original analysis never needed. The original's real costs were process creation and
+repeated tree walks, which a short single-threaded rewrite removes with
+byte-identical output. Delays injected below the cache, where real devices impose
+them, leave threads little to overlap when files are created together and only a
+bounded gain when they are scattered. For tools that do per-file metadata work, the
+habits that would have caught this are cheap: a strong sequential baseline, latency
+injected at the block layer, and a count of device reads per unit of work.

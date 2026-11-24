@@ -1,0 +1,51 @@
+\section{Introduction}
+\label{sec:intro}
+
+Defragmentation has a bad reputation on modern storage: moving whole files costs
+writes, slows co-running applications and wears out flash. FragPicker~\cite{park2021fragpicker}
+answered this by tracing what an application actually reads and writes and moving
+only the pieces whose requests straddle extent boundaries. Its artifact is a chain of
+Python and shell scripts: an \emph{analysis phase} that turns a BCC trace into
+per-file lists of hot regions, and a \emph{migration phase} that rewrites them.
+
+The analysis phase processes files one at a time. An earlier course project by the
+author of this paper added a parallel mode to it~\cite{forkbranch}: one batch
+inode-to-path map, extent lookups through the FIEMAP ioctl, and a pool of threads or
+processes. It reported a 12.74$\times$ speedup with 16 threads when a 5\,ms delay was
+added in user space before every per-file extent lookup, and a slowdown without the
+delay. The delay stood in for a slow disk or a network file system; no slow device
+was measured. This paper asks whether that result holds up, and finds that it does
+not, for reasons that are instructive beyond this one tool.
+
+We re-evaluate the analysis phase from scratch: we read both code bases, capture
+real traces with the artifact's own tracer, build an ablation ladder from the
+unmodified upstream code to the parallel mode with a single-threaded rewrite in the
+middle, and replace the user-space delay with delays injected at the block layer.
+Our findings:
+
+\begin{itemize}
+\item \textbf{The parallel mode parallelises work the original never does.} Upstream's
+  analysis phase reads no extents; the parallel mode reads every traced file's
+  extents and then discards them. Its only effect on the output is to drop files on
+  file systems without FIEMAP, where it lists none at all (\S\ref{sec:correct}).
+\item \textbf{The original's cost is process creation and repeated tree walks.}
+  \textbf{[E2/E3 numbers: Phase 1 per line, Phase 2 per file, scaling with $T$.]}
+\item \textbf{A single thread beats every parallel configuration.} A 200-line rewrite
+  that produces byte-identical output is \textbf{[X]}$\times$ faster than upstream and
+  \textbf{[Y]}$\times$ faster than the best parallel configuration on the same traces
+  (\S\ref{sec:ladder}).
+\item \textbf{The speedup came from the latency model.} With a 5\,ms user-space delay
+  we reproduce a \textbf{[Z]}$\times$ speedup; with the same delay injected at the block
+  layer, files created together need \textbf{[R]} device reads in total and threads
+  gain \textbf{[S]}; on a device that serves one request at a time they gain nothing
+  (\S\ref{sec:models}).
+\item \textbf{The trace itself is lossy.} Upstream's stop procedure loses the last
+  buffered chunk of events, positions above 4\,GiB wrap around, and inode numbers
+  from other file systems can be attributed to files under \texttt{/mnt}
+  (\S\ref{sec:correct}).
+\end{itemize}
+
+None of these problems needs new hardware or clever parallelism to fix; they need a
+competent sequential baseline~\cite{mcsherry2015cost}, latency injected where real
+latency occurs, and a count of the device reads the work actually requires. We
+release all scripts, raw data and traces (Appendix~\ref{sec:artifact}).

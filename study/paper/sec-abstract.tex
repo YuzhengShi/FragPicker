@@ -1,0 +1,19 @@
+\begin{abstract}
+FragPicker (SOSP '21) defragments only the file regions an application's requests
+straddle, using an analysis phase that turns a BCC trace into per-file lists of hot
+regions. A later fork of its artifact added a parallel analysis mode and reported a
+12.74$\times$ speedup with 16 threads, measured with a 5\,ms \texttt{sleep} added in
+user space before every per-file extent lookup. We re-evaluate that claim with real
+traces, an ablation ladder from the unmodified code to the parallel mode, and delays
+injected at the block layer instead of in user space. The parallel mode parallelises
+an extent lookup that the original analysis never performs and whose result it
+discards; on file systems without FIEMAP it drops every file. The original's cost is
+process creation (fourteen new processes per traced file) and one full tree walk per
+file. A 200-line single-threaded rewrite with byte-identical output is
+\textbf{[X]}$\times$ faster than the original on real traces and beats every parallel
+configuration. With the delay at the block layer, where only reads that miss the cache
+are slowed, the extent lookups of files created together need \textbf{[R]} device reads
+in all, and threads gain \textbf{[S]}$\times$ instead of \textbf{[Z]}$\times$. We also
+find that the shipped tracing procedure loses the last buffered chunk of events and
+wraps file positions above 4\,GiB. All scripts, traces and raw data are released.
+\end{abstract}

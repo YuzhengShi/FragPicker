@@ -420,6 +420,94 @@ def e2real(data, out):
     lines.append("")
     lines.append("Median wall time in seconds over the repetitions; upstream pipeline = processing.py + merge.py + hotness.sh 100.")
     write_md(out, "e2_real.md", "\n".join(lines) + "\n")
+    # figure: where the upstream pipeline's time goes, per workload (warm cache)
+    for cache in ("warm", "cold"):
+        ws = [w for w in wl if steps.get((w, cache)) and cells.get((w, cache, "p1_a"))]
+        if not ws:
+            continue
+        # left: share of the upstream pipeline's time by step (linear, sums to 100%);
+        # right: total time, upstream pipeline vs rewrite (log scale, dots, no stacking)
+        fig, (axl, axr) = plt.subplots(1, 2, figsize=(7.2, 0.5 + 0.42 * len(ws)),
+                                       gridspec_kw={"width_ratios": [1.3, 1]}, sharey=True)
+        parts = [("Phase 1: per-line append", C[0]), ("Phase 2: per-file find, sort, mv", C[1]),
+                 ("merge.py", C[2]), ("hotness.sh", C[3])]
+        y = list(range(len(ws)))
+        for yi, w in zip(y, ws):
+            st = steps[(w, cache)]
+            proc = median_ci(st["processing_s"])[0]
+            p1 = min(median_ci(cells[(w, cache, "p1_a")])[0], proc)
+            vals = [p1, proc - p1, median_ci(st["merge_s"])[0], median_ci(st["hotness_s"])[0]]
+            tot = sum(vals)
+            left = 0.0
+            for (lab, col), v in zip(parts, vals):
+                axl.barh(yi, 100 * v / tot, left=left, height=0.6, color=col, edgecolor="white",
+                         linewidth=1.5, label=lab if yi == 0 else None)
+                left += 100 * v / tot
+            num("e2real.%s.%s.breakdown" % (w, cache),
+                dict(zip(["phase1", "phase2", "merge", "hotness"], vals)), "e2_real.jsonl")
+            fast = median_ci(cells[(w, cache, "pipe_c")])[0] if cells.get((w, cache, "pipe_c")) else None
+            axr.plot([tot], [yi], marker=MARK[0], color=C[0], ms=6, ls="none",
+                     label="upstream pipeline" if yi == 0 else None)
+            if fast is not None:
+                axr.plot([fast], [yi], marker=MARK[1], color=C[1], ms=6, ls="none",
+                         label="rewrite (one process)" if yi == 0 else None)
+                axr.plot([fast, tot], [yi, yi], color=GRID, lw=1, zorder=0)
+                axr.text(tot * 1.25, yi, "%.0fx" % (tot / fast), va="center", fontsize=7, color=INK2)
+        axl.set_yticks(y)
+        axl.set_yticklabels(["%s\n(L=%d)" % (w, Ls[w]) for w in ws], fontsize=7)
+        axl.set_xlim(0, 100)
+        axl.set_xlabel("share of upstream pipeline time (%)")
+        axr.set_xscale("log")
+        axr.set_xlabel("total time (s), median")
+        for ax in (axl, axr):
+            style(ax)
+        axl.legend(fontsize=6, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+        axr.legend(fontsize=6, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.35), ncol=2)
+        save(fig, out, "e2real_breakdown_%s" % cache)
+
+
+def tex_tables(out):
+    """LaTeX tables for the paper, filled from NUMBERS only (so every cell traces back
+    to numbers.json and from there to a raw file)."""
+    def g(k, i=0):
+        v = NUMBERS.get(k, {}).get("value")
+        if v is None:
+            return None
+        return v[i] if isinstance(v, list) else v
+
+    def fmt(x, prec=2):
+        if x is None or (isinstance(x, float) and math.isnan(x)):
+            return "--"
+        if x >= 100:
+            return "%.0f" % x
+        if x >= 10:
+            return "%.1f" % x
+        return ("%." + str(prec) + "f") % x
+
+    # Table: real traces, warm cache
+    wl = ["read_seq", "read_stride", "tar", "fio", "sqlite3"]
+    rows = []
+    for w in wl:
+        a = g("e2real.%s.warm.a.median_s" % w)
+        if a is None:
+            continue
+        c = g("e2real.%s.warm.c.median_s" % w)
+        best_d = None
+        for d in ("d1", "d8", "d16"):
+            x = g("e2real.%s.warm.%s.median_s" % (w, d))
+            if x is not None and (best_d is None or x < best_d[1]):
+                best_d = (d, x)
+        pa = g("e2real.%s.warm.pipe_a.median_s" % w)
+        pc = g("e2real.%s.warm.pipe_c.median_s" % w)
+        rows.append("%s & %s & %s & %s & %s (%s) & %s & %s \\\\" % (
+            w.replace("_", "\\_"), "{:,}".format(int(g("e0.%s.L" % w) or 0)),
+            "{:,}".format(int(g("e0.%s.F_on_mnt" % w) or 0)), fmt(a), fmt(best_d[1]) if best_d else "--",
+            best_d[0][1:] if best_d else "", fmt(c), "%s / %s" % (fmt(pa), fmt(pc))))
+    if rows:
+        tex = ["\\begin{tabular}{@{}lrrrrrr@{}}", "\\toprule",
+               "trace & $L$ & $F$ & (a) & best (d) (thr.) & (c) & pipeline (a)/(c) \\\\", "\\midrule"]
+        tex += rows + ["\\bottomrule", "\\end{tabular}"]
+        write_md(out, "tab_real.tex", "\n".join(tex) + "\n")
 
 
 def main():
@@ -433,6 +521,7 @@ def main():
     for f in (e1, e0, e2, e2real, e3, e4, e5):
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")
+    tex_tables(a.out)
     os.makedirs(os.path.join(a.out, "results"), exist_ok=True)
     with open(os.path.join(a.out, "results", "numbers.json"), "w") as f:
         json.dump(NUMBERS, f, indent=1, sort_keys=True)
