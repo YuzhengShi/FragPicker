@@ -19,10 +19,11 @@ in the tree, warm cache). Medians with 95\% bootstrap intervals; rungs as in
 whole tree.} Upstream costs 15.0--15.3\,ms per traced file in this tree at every $F$
 from 100 to 10{,}000 (15.0\,s for 1{,}000 traced files, 151\,s for 10{,}000): one
 \texttt{find} over all 10{,}000 entries, then a \texttt{sort} and an \texttt{mv}. With
-1{,}000 traced files in a tree of 1{,}000 files it costs 8.1\,ms per traced
-file\textbf{[, in a tree of 100{,}000 X\,ms]}: about 7\,ms of it does not depend on the
-tree (it is mostly the cost of starting processes), and the rest grows by about
-0.8\,\textmu s per entry in the tree. The fork's sequential path runs the same commands
+1{,}000 traced files it costs 8.1\,ms per traced file in a tree of 1{,}000 files and
+87\,ms in one of 100{,}000. A straight line through the three tree sizes fits each
+within 2\%: 7.2\,ms per traced file that does not depend on the tree (Phase~1's work
+on the file's 20 trace lines, about 1.5\,ms, and starting Phase~2's processes), plus
+0.80\,\textmu s per entry in the tree. The fork's sequential path runs the same commands
 and costs the same per traced file; it starts about 0.11\,s later, because it imports
 the parallel engine's modules even without \texttt{--parallel}.
 
@@ -39,7 +40,10 @@ appeared in its results.
 \paragraph{The rewrite beats every thread count.} At $F = 1{,}000$ the rewrite takes
 0.19\,s, 80$\times$ faster than upstream (95\% CI 78--81) and 25$\times$ faster than the
 best parallel setting (4.68\,s with 8 threads; CI 24--25). At $F = 10{,}000$ the factors
-are 104$\times$ and 25$\times$ (1.46\,s against 151\,s and 36.7\,s). The parallel path is
+are 104$\times$ and 25$\times$ (1.46\,s against 151\,s and 36.7\,s), and with 1{,}000
+traced files in the tree of 100{,}000 they are 242$\times$ and 13.5$\times$ (0.36\,s
+against 87\,s and 4.85\,s), because the rewrite and the parallel path walk the tree once
+and upstream walks it once per traced file. The parallel path is
 faster than upstream only because its single walk replaces the per-file \texttt{find};
 it still starts two \texttt{sort} processes per file, one for the discarded extents and
 one for the request file. Replacing the extent lookup with a stub (rung e) saves 24\% at

@@ -94,8 +94,9 @@ in every repetition; we report medians with 95\% percentile-bootstrap intervals
 (10{,}000 resamples) and compute intervals for speedups by resampling numerator and
 denominator independently~\cite{hoefler2015scientific}. Experiments run one at a time.
 A configuration whose runs exceed a time budget stops after at least three
-repetitions; this affected only upstream and the fork's sequential path in the largest
-configurations, which ran \textbf{[four to seven]} times. Raw results are JSON lines with the commit hashes,
+repetitions; this affected only the three slowest rungs with 10{,}000 traced files
+(upstream and the fork's sequential path ran four times, the one-thread parallel path
+seven or eight). Raw results are JSON lines with the commit hashes,
 kernel and configuration of every run; every table and figure is generated from them
 by one script, which applies a short list of documented exclusions.
 

@@ -31,8 +31,9 @@ Our findings:
 \item \textbf{The original's cost is process creation and repeated tree walks.}
   Phase~1 makes about 41 system calls per trace line (74\,\textmu s), most of them
   one-byte reads; Phase~2 starts a \texttt{find} over the whole tree, a \texttt{sort}
-  and an \texttt{mv} for every traced file, 8.1\,ms per file in a tree of 1{,}000 files
-  and 15\,ms in one of 10{,}000 (\S\ref{sec:anatomy}, \S\ref{sec:ladder}).
+  and an \texttt{mv} for every traced file. Together they cost 8.1\,ms per traced file
+  in a tree of 1{,}000 files, 15\,ms in one of 10{,}000 and 87\,ms in one of 100{,}000
+  (\S\ref{sec:anatomy}, \S\ref{sec:ladder}).
 \item \textbf{A single thread beats every parallel configuration.} On five real traces,
   a 226-line rewrite that produces byte-identical output runs upstream's
   \texttt{processing.py} 4--191$\times$ faster, and 19--26$\times$ faster than the best

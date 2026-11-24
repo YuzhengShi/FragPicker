@@ -9,7 +9,11 @@ costs that dominate Phases~1 and~2 should carry over to bare metal, but their
 absolute values will differ. ``Cold'' runs drop the guest's caches and remount the
 file system, and the loop devices bypass the guest page cache, but the Windows host
 may still cache the virtual disk; the cold timings on the plain loop device are
-therefore lower bounds on device time. Our conclusions about slow devices rest on
+therefore lower bounds on device time. A calibration with \texttt{fio} (4\,KiB random
+direct reads over 8\,GiB written just before) gives 0.34\,ms per read at queue depth 1
+and 32{,}000 reads per second at depth 16, the same in a second pass over the same
+offsets; from inside the guest we cannot tell how many of these reads the host's cache
+served. Our conclusions about slow devices rest on
 request counts and on injected delays, which the host cache does not affect.
 
 \paragraph{Emulated devices.} dm-delay and the one-request-at-a-time NBD device bound

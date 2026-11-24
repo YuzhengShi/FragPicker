@@ -1,0 +1,4 @@
+{"exp": "e7", "pass": "first", "iodepth": 1, "iops": 2937.40313, "lat_mean_us": 337.614212507, "clat_p50_us": 280.576, "clat_p99_us": 552.96}
+{"exp": "e7", "pass": "first", "iodepth": 16, "iops": 32114.39428, "lat_mean_us": 496.994336695, "clat_p50_us": 444.416, "clat_p99_us": 937.984}
+{"exp": "e7", "pass": "second", "iodepth": 1, "iops": 2970.901455, "lat_mean_us": 333.846122516, "clat_p50_us": 280.576, "clat_p99_us": 593.92}
+{"exp": "e7", "pass": "second", "iodepth": 16, "iops": 33155.542223, "lat_mean_us": 481.353814291, "clat_p50_us": 432.128, "clat_p99_us": 937.984}
