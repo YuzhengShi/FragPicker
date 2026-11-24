@@ -7,7 +7,9 @@ storage. The parallel mode overlapped sleeps placed before an extent lookup that
 original analysis never needed. The original's real costs were process creation and
 repeated tree walks, which a short single-threaded rewrite removes with
 byte-identical output. Delays injected below the cache, where real devices impose
-them, leave threads little to overlap when files are created together and only a
-bounded gain when they are scattered. For tools that do per-file metadata work, the
+them, leave threads nothing to overlap when files are created together; when files
+are scattered, the reads happen in the tree walk before the threads start; and where
+a lookup does wait for its own extent block, the fork's request size keeps the
+interpreter lock held through the wait. For tools that do per-file metadata work, the
 habits that would have caught this are cheap: a strong sequential baseline, latency
 injected at the block layer, and a count of device reads per unit of work.

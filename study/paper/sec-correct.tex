@@ -57,6 +57,13 @@ so the limit can be a thousand traced files.
 Its third step sorts every \texttt{*.txt} file in the working directory, including
 files that are not analysis output (case~D).
 
+\paragraph{Two of the fork's own scripts do not run.} The fork's \texttt{analyze.sh},
+the entry point that chains tracing and analysis, fails \texttt{bash -n} with a syntax
+error the fork introduced (\texttt{if ! ./trace.sh "\$PROCESS\_NAME" \&; then}, line
+76); upstream's version parses. Its \texttt{overhead\_profiling\_benchmark.py} stops
+at an import of a class that was later renamed. The two speedup benchmarks, one of
+which produced the 12.74$\times$ figure, run.
+
 \paragraph{The trace itself loses and corrupts events.}
 These problems are upstream's and affect every rung equally.
 \begin{itemize}

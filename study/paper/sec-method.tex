@@ -103,7 +103,8 @@ by one script, which applies a short list of documented exclusions.
 Because the laptop is shared with other programs, we check every timed experiment for
 external load after the fact: each run's time is divided by the median of its own
 configuration, and a five-minute window in which at least 30\% of the runs are more
-than 1.3$\times$ slower is flagged. One window was flagged, a ten-minute stretch in
-which every configuration of the \texttt{sqlite3} replay ran about 1.6$\times$ slower
-while the study ran nothing else; we repeated that workload and report the
-repeat.
+than 1.3$\times$ slower is flagged. We wrote this rule after noticing the anomaly it
+flags: a ten-minute stretch in which every configuration of the \texttt{sqlite3}
+replay ran about 1.6$\times$ slower while the study ran nothing else. We repeated that
+workload and report the repeat; the same rule flags no other window in any repeated
+timing experiment.

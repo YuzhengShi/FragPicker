@@ -9,9 +9,10 @@ the parallel mode, and delays injected at the block layer instead of in user spa
 The parallel mode parallelises an extent lookup that the original analysis never
 performs and whose result it discards; on file systems without FIEMAP it drops every
 file. The original's cost is process creation (fourteen new processes per traced file)
-and one full tree walk per file. A single-threaded rewrite with byte-identical output
-runs the original's analysis 4--191$\times$ faster on five real traces and beats every
-parallel configuration. With the delay at the block layer, where only reads that miss
+and one full tree walk per file. On five real traces, a single-threaded rewrite with
+byte-identical output runs the original's \texttt{processing.py} 4--191$\times$ faster
+and its whole analysis pipeline 4--129$\times$ faster, and beats every parallel
+configuration. With the delay at the block layer, where only reads that miss
 the cache are slowed, the lookups of 1{,}000 files created together read 192\,KiB from
 the device in all, and 16 threads run at 0.47$\times$ the speed of one instead of
 15.5$\times$ faster. Where every lookup does wait for the device, the fork's FIEMAP

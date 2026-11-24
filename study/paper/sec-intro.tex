@@ -43,11 +43,13 @@ Our findings:
   layer, the lookups of 1{,}000 files created together read 192\,KiB from the device
   in all, and 16 threads run at 0.47$\times$ the speed of one; on a device that serves
   one request at a time they gain nothing either (\S\ref{sec:models}).
-\item \textbf{Even real device waits did not overlap.} In a scattered tree, the reads
+\item \textbf{Real device waits overlapped little.} In a scattered tree, the reads
   happen in the tree walk, before the threads start (\S\ref{sec:decompose}). Where
   every lookup must read an extent block of its own, the fork's 1{,}824-byte FIEMAP
   request keeps CPython's interpreter lock held through the wait: 16 threads gain
-  1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}).
+  1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}). The
+  largest gain we saw for the fork's own lookups was 1.4--1.6$\times$, on F2FS
+  (\S\ref{sec:fiemap}).
 \item \textbf{The trace itself is lossy.} Upstream's stop procedure loses the last
   buffered chunk of events, positions above 4\,GiB wrap around, and inode numbers
   from other file systems can be attributed to files under \texttt{/mnt}
