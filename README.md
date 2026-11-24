@@ -89,12 +89,9 @@ sudo apt-get install -y e2fsprogs  # For filefrag (fallback)
 
 ### Install FragPicker Parallel
 ```bash
-# Clone repository
-git clone https://github.com/jonggyup/FragPicker.git
+# Clone this fork's parallel-analysis branch (upstream FragPicker does not have it)
+git clone -b parallel-analysis https://github.com/YuzhengShi/FragPicker.git
 cd FragPicker
-
-# Checkout parallel branch (or use main if merged)
-git checkout parallel-analysis
 
 # Install Python dependencies
 pip install -r requirements.txt
