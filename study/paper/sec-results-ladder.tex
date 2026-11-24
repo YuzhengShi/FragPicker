@@ -31,8 +31,10 @@ never appeared in its results.
 faster than the best parallel setting (\textbf{[4.76]}\,s with 8 threads). The parallel
 path is faster than upstream only because its single walk replaces the per-file
 \texttt{find}; it still starts two \texttt{sort} processes per file, one for the
-discarded extents and one for the request file. Removing the extent lookup altogether
-(rung e) changes its time by less than \textbf{[2]}\%: with a warm cache the lookups the
-threads are meant to overlap cost almost nothing. In McSherry et al.'s
+discarded extents and one for the request file. Replacing the extent lookup with a stub
+(rung e) saves 24\% at $F = 1{,}000$ (3.55\,s against 4.68\,s) and 7\% at $F = 10{,}000$
+(34.3\,s against 36.7\,s): the lookups the threads were added to overlap are a minor
+part of the parallel path's own time, which goes mostly to creating \texttt{sort}
+processes. In McSherry et al.'s
 terms~\cite{mcsherry2015cost}, the parallel engine's COST is unbounded: no thread count
 we tried outperforms the single thread.

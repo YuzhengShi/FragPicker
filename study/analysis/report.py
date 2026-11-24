@@ -33,6 +33,9 @@ RUNG_LABEL = {
     "e8": "(e) 8 threads, no FIEMAP",
 }
 RUNG_ORDER = ["a", "b", "c", "d1", "d4", "d8", "d16", "e8"]
+# rungs drawn in the paper's ladder figures, each with a fixed colour and marker
+RUNG_FIG = ["a", "c", "d1", "d8", "e8"]
+RUNG_STYLE = {"a": 0, "c": 1, "d1": 2, "d8": 3, "e8": 4, "b": 5, "d4": 6, "d16": 7}
 
 NUMBERS = {}
 EXCLUDE = {}
@@ -206,7 +209,8 @@ def e2(data, out, fname="e2_ladder.jsonl", tag="e2"):
         if len(Fs) < 2:
             continue
         fig, ax = plt.subplots(figsize=(4.6, 3.2))
-        for i, rg in enumerate(RUNG_ORDER):
+        for rg in RUNG_FIG:
+            i = RUNG_STYLE[rg]
             xs, ms, los, his = [], [], [], []
             for F in Fs:
                 x = cells.get((g[0], g[1], F, g[2], g[3], rg))
@@ -216,7 +220,7 @@ def e2(data, out, fname="e2_ladder.jsonl", tag="e2"):
                     los.append(m - (lo if not math.isnan(lo) else m))
                     his.append((hi if not math.isnan(hi) else m) - m)
             if xs:
-                ax.errorbar(xs, ms, yerr=[los, his], color=C[i % 8], marker=MARK[i % 8], ms=5,
+                ax.errorbar(xs, ms, yerr=[los, his], color=C[i], marker=MARK[i], ms=5,
                             lw=1.6, capsize=2, label=RUNG_LABEL.get(rg, rg))
         ax.set_xscale("log"); ax.set_yscale("log")
         ax.set_xlabel("traced files F")
