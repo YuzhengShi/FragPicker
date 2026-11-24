@@ -97,7 +97,21 @@ def dm_remove(name):
 
 
 def drop_caches():
+    """Global drop of the page cache, dentries and inodes.
+
+    With FPSTUDY_GENTLE_DROP=1 (E6, on a shared host that serves other programs) there is
+    no global drop: every caller has just unmounted the file system under test, the kernel
+    drops a block device's cache when its last opener closes it, and the loop devices read
+    their backing files with direct I/O, so the test file system is cold anyway; the loop
+    devices' buffers are flushed explicitly as well. Interpreter and tools stay cached.
+    """
     os.sync()
+    if os.environ.get("FPSTUDY_GENTLE_DROP") == "1":
+        for line in sh(["losetup", "-a"], check=False).splitlines():
+            dev = line.split(":", 1)[0]
+            if dev.startswith("/dev/loop"):
+                sh(["blockdev", "--flushbufs", dev], check=False)
+        return
     with open("/proc/sys/vm/drop_caches", "w") as f:
         f.write("3\n")
 
@@ -134,6 +148,11 @@ class TestFS:
         self.loop = None
         self.dm = None
         self.dev = None
+        # E6 host, whose disk takes a long time per flush: FPSTUDY_CREATE_MOUNT_OPTS (e.g.
+        # barrier=0 for ext4) applies only to the first mount of a fresh file system, in
+        # which the files are created; every later mount, including the measured ones, uses
+        # mount_opts. Flush ordering does not change where blocks are allocated.
+        self._create_opts = os.environ.get("FPSTUDY_CREATE_MOUNT_OPTS") if fresh else None
         # Real-device mode (E6): FPSTUDY_DEVICE=/dev/sdX replaces the loop image. mkfs
         # destroys the device, so it must be confirmed with
         # FPSTUDY_DEVICE_CONFIRM=wipe-<basename of the device>.
@@ -161,7 +180,8 @@ class TestFS:
             self.dm_name = "fpdelay%d" % os.getpid()
             self.dev = dm_delay_create(self.dm_name, self.loop, self.delay_ms, 0)
             self.dm = self.dm_name
-        mount(self.dev, self.mnt, self.fstype, self.mount_opts)
+        mount(self.dev, self.mnt, self.fstype, self._create_opts or self.mount_opts)
+        self._create_opts = None
 
     def remount_cold(self):
         """umount, drop caches, mount again: metadata must come from the device."""

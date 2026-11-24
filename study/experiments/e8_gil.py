@@ -147,7 +147,7 @@ def main():
     rungs.append_jsonl(out, {"exp": "e8", "kind": "layout", "N": a.N, "blocks": a.blocks,
                              "extents_median": ext[len(ext) // 2], "extents_min": ext[0],
                              "extents_max": ext[-1], "big_small_identical": same,
-                             "python": sys.version.split()[0],
+                             "python": sys.version.split()[0], "gil_enabled": getattr(sys, "_is_gil_enabled", lambda: True)(),
                              "req_bytes": {k: ctypes.sizeof(v) for k, v in REQ.items()},
                              "versions": versions})
     print("layout: extents %d..%d, identical=%s, request bytes %s" % (
@@ -183,7 +183,7 @@ def main():
                                "variant": v, "workers": w, "rep": rep, "wall_s": wall,
                                "per_file_ms": wall / a.N * 1000,
                                "reads_per_file": io["read_ios"] / a.N, "io": io,
-                               "python": sys.version.split()[0], "versions": versions,
+                               "python": sys.version.split()[0], "gil_enabled": getattr(sys, "_is_gil_enabled", lambda: True)(), "versions": versions,
                                "ts": time.time()}
                         rungs.append_jsonl(out, rec)
                         print("%-8s d=%-2d %-7s W=%-2d rep=%d %.3fs  %.2f ms/file  reads/file=%.2f" % (

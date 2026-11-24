@@ -15,7 +15,7 @@ source "$CODE/study/bin/setup_bcc_headers.sh"
 mkdir -p /root/fpstudy/data /root/fpstudy/work /root/fpstudy/img
 cd /root/fpstudy
 case "$EXP" in
-  *.py) bash "$CODE/study/bin/run_in_ns.sh" python3 "$CODE/study/experiments/$EXP" "$@" ;;
+  *.py) bash "$CODE/study/bin/run_in_ns.sh" "${FPSTUDY_PYTHON:-python3}" "$CODE/study/experiments/$EXP" "$@" ;;
   *.sh) bash "$CODE/study/bin/run_in_ns.sh" bash "$CODE/study/experiments/$EXP" "$@" ;;
   *) echo "unknown experiment $EXP"; exit 2 ;;
 esac

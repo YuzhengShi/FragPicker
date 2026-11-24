@@ -635,8 +635,8 @@ def e7b(data, out):
     write_md(out, "e7b_delay.md", "\n".join(lines) + "\n")
 
 
-def e8(data, out):
-    p = os.path.join(data, "e8_gil.jsonl")
+def e8(data, out, fname="e8_gil.jsonl", tag="e8"):
+    p = os.path.join(data, fname)
     if not os.path.exists(p):
         return
     rows = load(p)
@@ -660,8 +660,8 @@ def e8(data, out):
             lines.append("| %s | %s | %.3f | %.3f | %.3f | %.2f [%.2f, %.2f] |" % (
                 dv, vlab[v], median_ci(x1)[0], median_ci(x4)[0] if x4 else float("nan"),
                 median_ci(x16)[0] if x16 else float("nan"), sp[0], sp[1], sp[2]))
-            num("e8.%s.%s.speedup16" % (dv, v), list(sp), "e8_gil.jsonl")
-            num("e8.%s.%s.w1_s" % (dv, v), median_ci(x1)[0], "e8_gil.jsonl")
+            num("%s.%s.%s.speedup16" % (tag, dv, v), list(sp), fname)
+            num("%s.%s.%s.w1_s" % (tag, dv, v), median_ci(x1)[0], fname)
     if lay:
         L0 = lay[-1]
         lines.append("")
@@ -669,9 +669,9 @@ def e8(data, out):
                      "1,824- and 984-byte requests returned identical extents: %s; Python %s." % (
                          L0["N"], L0["extents_median"], L0["extents_min"], L0["extents_max"],
                          L0["req_bytes"], L0["big_small_identical"], L0["python"]))
-        num("e8.layout", {k: L0[k] for k in ("N", "extents_median", "big_small_identical", "req_bytes", "python")},
-            "e8_gil.jsonl")
-    write_md(out, "e8_gil.md", "\n".join(lines) + "\n")
+        num(tag + ".layout", {k: L0[k] for k in ("N", "extents_median", "big_small_identical", "req_bytes", "python")},
+            fname)
+    write_md(out, tag + "_gil.md", "\n".join(lines) + "\n")
     if not devs:
         return
     fig, axs = plt.subplots(1, len(devs), figsize=(1.9 * len(devs) + 0.6, 2.8), sharey=True)
@@ -696,7 +696,213 @@ def e8(data, out):
     axs[0].set_ylabel("speedup over 1 worker")
     h, l_ = axs[0].get_legend_handles_labels()
     fig.legend(h, l_, fontsize=6.5, frameon=False, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 0.0))
-    save(fig, out, "e8_gil")
+    save(fig, out, tag + "_gil")
+
+
+# ---------------------------------------------------------------- exploratory (batch 4-5, E6)
+def e9(data, out, fname="e9_calls.jsonl", tag="e9"):
+    p = os.path.join(data, fname)
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    calls = ("stat", "open", "fiemap", "fiemap_eof", "close")
+    cell = collections.defaultdict(lambda: collections.defaultdict(list))
+    ext = {}
+    for r in rows:
+        if r.get("kind") == "layout":
+            ext[(r["fs"], r["blocks"])] = r["extents_median"]
+            continue
+        k = (r["fs"], r["blocks"], r["cache"], r["threads"])
+        for c in calls:
+            v = r["calls"].get(c)
+            if v:
+                cell[k][c + ".us"].append(v["us_per_file"])
+                cell[k][c + ".r"].append(v["read_ios"] / r["n"])
+    lines = ["| fs | extents | cache | threads | " + " | ".join("%s us (reads/file)" % c for c in calls) + " |",
+             "|---|---|---|---|" + "---|" * len(calls)]
+    for k in sorted(cell):
+        d = cell[k]
+        lines.append("| %s | %s | %s | %d | " % (k[0], ext.get(k[:2], k[1]), k[2], k[3]) + " | ".join(
+            "%.1f (%.2f)" % (median_ci(d[c + ".us"])[0], median_ci(d[c + ".r"])[0]) if d[c + ".us"] else ""
+            for c in calls) + " |")
+        for c in calls:
+            if d[c + ".us"]:
+                key = "%s.%s.b%d.%s.W%d.%s" % (tag, k[0], k[1], k[2], k[3], c)
+                num(key + ".us_per_file", list(median_ci(d[c + ".us"])) + [len(d[c + ".us"])], fname)
+                num(key + ".reads_per_file", median_ci(d[c + ".r"])[0], fname)
+    for k in sorted(cell):
+        if k[3] == 1:
+            k16 = k[:3] + (16,)
+            for c in ("stat", "fiemap"):
+                if cell[k][c + ".us"] and cell.get(k16, {}).get(c + ".us"):
+                    num("%s.%s.b%d.%s.%s.speedup16" % ((tag,) + k[:3] + (c,)),
+                        list(ratio_ci(cell[k][c + ".us"], cell[k16][c + ".us"])), fname)
+    lines.append("")
+    lines.append("Per-call passes over all files (stat all, open all, FIEMAP all, close all); median of the "
+                 "repetitions; fiemap_eof asks only up to the file size.")
+    write_md(out, tag + "_calls.md", "\n".join(lines) + "\n")
+
+
+def e9b(data, out):
+    p = os.path.join(data, "e9b_f2fs_fiemap.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    cell = collections.defaultdict(lambda: collections.defaultdict(list))
+    for r in rows:
+        k = (r["blocks"], r["mode"])
+        cell[k]["us"].append(r["us_per_call"])
+        cell[k]["mb"].append(r["map_blocks_per_fiemap"])
+    lines = ["| blocks | request | us per FIEMAP (with probes) | f2fs_map_blocks calls per FIEMAP |", "|---|---|---|---|"]
+    for k in sorted(cell):
+        m = median_ci(cell[k]["mb"])[0]
+        lines.append("| %d | %s | %.0f | %.0f (min %.0f, max %.0f) |" % (
+            k[0], k[1], median_ci(cell[k]["us"])[0], m, min(cell[k]["mb"]), max(cell[k]["mb"])))
+        num("e9b.b%d.%s.map_blocks_per_fiemap" % k, [m, min(cell[k]["mb"]), max(cell[k]["mb"])], "e9b_f2fs_fiemap.jsonl")
+    write_md(out, "e9b_f2fs.md", "\n".join(lines) + "\n")
+
+
+def e10(data, out, fname="e10_walk.jsonl", tag="e10"):
+    p = os.path.join(data, fname)
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    cell = collections.defaultdict(list)
+    reads = collections.defaultdict(list)
+    equal = collections.defaultdict(set)
+    for r in rows:
+        k = (r["model"], r["walker"])
+        cell[k].append(r["wall_s"])
+        reads[k].append(r["io"]["read_ios"])
+        equal[k].add(bool(r["equal_to_find"]))
+    walkers = [w for w in ("find", "scandir/1", "scandir/4", "scandir/16") if any(k[1] == w for k in cell)]
+    models = [m for m in ("plain", "dmdelay", "qd1", "nbdpar") if any(k[0] == m for k in cell)]
+    lines = ["| device | " + " | ".join(walkers) + " | reads | same map as find |", "|---|" + "---|" * (len(walkers) + 2)]
+    for m in models:
+        vals = []
+        for w in walkers:
+            x = cell.get((m, w))
+            vals.append("%.3f" % median_ci(x)[0] if x else "")
+            if x:
+                num("%s.%s.%s.median_s" % (tag, m, w), list(median_ci(x)) + [len(x)], fname)
+                num("%s.%s.%s.reads" % (tag, m, w), median_ci(reads[(m, w)])[0], fname)
+                if w.startswith("scandir/") and w != "scandir/1" and cell.get((m, "scandir/1")):
+                    num("%s.%s.%s.speedup_vs_1" % (tag, m, w), list(ratio_ci(cell[(m, "scandir/1")], x)), fname)
+        rd = median_ci(reads[(m, walkers[0])])[0]
+        eq = all(all(equal[(m, w)]) for w in walkers if (m, w) in equal)
+        lines.append("| %s | " % m + " | ".join(vals) + " | %d | %s |" % (rd, eq))
+    lines.append("")
+    lines.append("Cold walk of the tree, wall time in seconds (median).")
+    write_md(out, tag + "_walk.md", "\n".join(lines) + "\n")
+
+
+def e11(data, out):
+    p = os.path.join(data, "e11_readahead.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    cell = collections.defaultdict(list)
+    reads = collections.defaultdict(list)
+    kib = collections.defaultdict(list)
+    for r in rows:
+        k = (r["layout"], r["inode_readahead_blks"], r["measure"])
+        cell[k].append(r["wall_s"])
+        reads[k].append(r["io"]["read_ios"])
+        kib[k].append(r["io"]["read_sectors"] / 2)
+        if r.get("in_effect") != r["inode_readahead_blks"]:
+            print("WARNING e11: requested %s, in effect %s" % (r["inode_readahead_blks"], r.get("in_effect")))
+    lines = ["| layout | inode_readahead_blks | walk s (reads) | lookups, 1 thread s (reads, KiB) | 16 threads s | speedup |",
+             "|---|---|---|---|---|---|"]
+    for lay in ("together", "scattered"):
+        for v in sorted({k[1] for k in cell if k[0] == lay}):
+            w, f1, f16 = (cell.get((lay, v, m)) for m in ("walk", "files-only/1", "files-only/16"))
+            if not (w and f1 and f16):
+                continue
+            sp = ratio_ci(f1, f16)
+            lines.append("| %s | %d | %.3f (%d) | %.3f (%d, %.0f) | %.3f | %.2f |" % (
+                lay, v, median_ci(w)[0], median_ci(reads[(lay, v, "walk")])[0], median_ci(f1)[0],
+                median_ci(reads[(lay, v, "files-only/1")])[0], median_ci(kib[(lay, v, "files-only/1")])[0],
+                median_ci(f16)[0], sp[0]))
+            base = "e11.%s.ra%d" % (lay, v)
+            num(base + ".walk_s", list(median_ci(w)), "e11_readahead.jsonl")
+            num(base + ".walk_reads", median_ci(reads[(lay, v, "walk")])[0], "e11_readahead.jsonl")
+            num(base + ".files1_s", list(median_ci(f1)), "e11_readahead.jsonl")
+            num(base + ".files1_reads", median_ci(reads[(lay, v, "files-only/1")])[0], "e11_readahead.jsonl")
+            num(base + ".files_speedup16", list(sp), "e11_readahead.jsonl")
+    lines.append("")
+    lines.append("dm-delay, 5 ms configured; cold before every measurement; medians.")
+    write_md(out, "e11_readahead.md", "\n".join(lines) + "\n")
+
+
+def e12(data, out, fname, tag):
+    p = os.path.join(data, fname)
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    lines = ["| pass | threads | reads/s | mean ms | p50 ms | p99 ms |", "|---|---|---|---|---|---|"]
+    for r in rows:
+        lines.append("| %s | %d | %.0f | %.1f | %.1f | %.1f |" % (
+            r["pass"], r["threads"], r["iops"], r["lat_mean_ms"], r["lat_p50_ms"], r["lat_p99_ms"]))
+        num("%s.%s.W%d" % (tag, r["pass"], r["threads"]),
+            {k: r[k] for k in ("iops", "lat_mean_ms", "lat_p50_ms", "lat_p99_ms", "reads")}, fname)
+    write_md(out, tag + ".md", "\n".join(lines) + "\n")
+
+
+def e6_latency(data, out):
+    """E5's engine on the E6 disk: sequential loop (workers 0) against 16 threads."""
+    p = os.path.join(data, "e6_latency.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = [r for r in load(p) if r.get("model") == "plain"]
+    cell = collections.defaultdict(list)
+    reads = collections.defaultdict(list)
+    for r in rows:
+        k = (r["layout"], r["cache"], r["workers"])
+        cell[k].append(r["wall_s"])
+        reads[k].append((r.get("io") or {}).get("read_ios", 0))
+    lines = ["| layout | cache | sequential s (reads) | 16 threads s | speedup |", "|---|---|---|---|---|"]
+    for lay in ("together", "scattered"):
+        for cache in ("cold", "warm"):
+            s, t = cell.get((lay, cache, 0)), cell.get((lay, cache, 16))
+            if not (s and t):
+                continue
+            sp = ratio_ci(s, t)
+            lines.append("| %s | %s | %.3f (%d) | %.3f | %.2f [%.2f, %.2f] |" % (
+                lay, cache, median_ci(s)[0], median_ci(reads[(lay, cache, 0)])[0], median_ci(t)[0], *sp))
+            num("e6lat.%s.%s.seq_s" % (lay, cache), list(median_ci(s)) + [len(s)], "e6_latency.jsonl")
+            num("e6lat.%s.%s.speedup16" % (lay, cache), list(sp), "e6_latency.jsonl")
+            num("e6lat.%s.%s.seq_reads" % (lay, cache), median_ci(reads[(lay, cache, 0)])[0], "e6_latency.jsonl")
+    write_md(out, "e6_latency.md", "\n".join(lines) + "\n")
+
+
+def gil_by_python(out):
+    """The 16-worker speedups of E8 for each interpreter and device (from NUMBERS)."""
+    tags = [("e8", "3.12"), ("e8py314", "3.14"), ("e8py314t", "3.14t (no GIL)"), ("e6gil", "3.14, real disk")]
+    devs = [("plain", "loop, no delay"), ("dmdelay", "dm-delay"), ("nbd_qd1", "one at a time"),
+            ("nbd_par", "32 in flight")]
+    vars_ = [("fork", "fork lookup, thr."), ("big", "1,824\\,B, thr."), ("small", "984\\,B, thr."),
+             ("big_mp", "1,824\\,B, proc.")]
+    rows = []
+    for tag, tlab in tags:
+        for dv, dlab in devs:
+            vals = [NUMBERS.get("%s.%s.%s.speedup16" % (tag, dv, v), {}).get("value") for v, _ in vars_]
+            if any(vals):
+                rows.append((tlab, "real disk" if tag == "e6gil" else dlab, vals))
+    if not rows:
+        return
+    L = ["\\begin{tabular}{@{}ll" + "r" * len(vars_) + "@{}}", "\\toprule",
+         "Python & device & " + " & ".join(l for _, l in vars_) + " \\\\", "\\midrule"]
+    last = None
+    for tlab, dlab, vals in rows:
+        if last is not None and tlab != last:
+            L.append("\\midrule")
+        L.append("%s & %s & " % (tlab if tlab != last else "", dlab) +
+                 " & ".join(("%.2f$\\times$" % v[0]) if v else "--" for v in vals) + " \\\\")
+        last = tlab
+    L += ["\\bottomrule", "\\end{tabular}"]
+    os.makedirs(os.path.join(out, "results"), exist_ok=True)
+    with open(os.path.join(out, "results", "tab_gilpy.tex"), "w") as f:
+        f.write("\n".join(L) + "\n")
 
 
 def tex_tables(out):
@@ -837,6 +1043,19 @@ def main():
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")
     e2(a.data, a.out, "e2_monitor.jsonl", "e2monitor")
+    # exploratory (batch 4 and 5, and E6 on the shared host)
+    for f in (e9, e9b, e10, e11):
+        f(a.data, a.out)
+    e8(a.data, a.out, "e8_gil_py314.jsonl", "e8py314")
+    e8(a.data, a.out, "e8_gil_py314t.jsonl", "e8py314t")
+    e8(a.data, a.out, "e6_gil.jsonl", "e6gil")
+    e9(a.data, a.out, "e6_calls.jsonl", "e6calls")
+    e10(a.data, a.out, "e6_walk.jsonl", "e6walk")
+    e12(a.data, a.out, "e6_device.jsonl", "e6dev")
+    e12(a.data, a.out, "e6_device_after.jsonl", "e6dev_after")
+    e6_latency(a.data, a.out)
+    e2(a.data, a.out, "e6_ladder.jsonl", "e6ladder")
+    gil_by_python(a.out)
     tex_tables(a.out)
     os.makedirs(os.path.join(a.out, "results"), exist_ok=True)
     with open(os.path.join(a.out, "results", "numbers.json"), "w") as f:
