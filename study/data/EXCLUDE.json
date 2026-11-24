@@ -11,5 +11,19 @@
       "e4_fiemap_f2fs.jsonl"
     ],
     "reason": "On F2FS the first run's fragmentation procedure (overwrite with fsync, no hole punch) left every file at one extent (F2FS updated the blocks in place), so its rows do not measure the intended extent counts. F2FS was re-run with punch-and-rewrite into e4_fiemap_f2fs.jsonl, which replaces these rows. The rows stay in the raw file."
+  },
+  "e3_phase1.jsonl": {
+    "where": {
+      "fs": [
+        "ext4",
+        "xfs",
+        "btrfs",
+        "f2fs"
+      ]
+    },
+    "append": [
+      "e3_phase1_fs.jsonl"
+    ],
+    "reason": "Batch 1 ran E3 with L up to 10^6 on every file system; to save about two hours it was stopped once the WSL root file system was done, and the four loop file systems were re-run with L up to 10^5 into e3_phase1_fs.jsonl. Rows of the loop file systems written before the stop are dropped here."
   }
 }

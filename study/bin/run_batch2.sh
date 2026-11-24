@@ -7,6 +7,8 @@ tr -d '\r' < /mnt/d/fragpicker-study/fork/study/bin/run_exp.sh > $R
 log=/root/fpstudy/batch2.log
 echo "batch2 start $(date -u +%FT%TZ)" >> $log
 step() { echo "=== $(date -u +%FT%TZ) $*" >> $log; bash $R "$@" >> $log 2>&1; echo "=== rc=$? $(date -u +%FT%TZ)" >> $log; }
+rm -f /root/fpstudy/data/e3_phase1_fs.jsonl
+step e3_phase1.py --fs ext4,xfs,btrfs,f2fs --L 1000,10000,100000 --F 1,1000 --reps 10 --out e3_phase1_fs.jsonl
 step e7b_dmdelay_effective.sh
 step e8_gil.py --reps 5
 step e5b_decompose.py --reps 5
