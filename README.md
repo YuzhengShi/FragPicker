@@ -74,7 +74,7 @@ Other charts and data are in [`benchmark_results/`](benchmark_results/): efficie
 The analysis phase reads a trace of the application's I/O, finds the files it touched, and records each file's extents. This fork changes the steps in the "This fork" box.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["trace.sh: trace I/O"] --> B["parse.sh: parse trace"]
     B --> C["processing.py"]
     subgraph P["This fork"]
