@@ -4,17 +4,22 @@ FragPicker processing.py - Final Production Version
 Integrates all parallel optimizations with full backward compatibility
 
 Features:
-- Batch inode mapping (10-30x speedup)
-- Parallel FIEMAP analysis (20-50x per-file speedup)
-- Parallel sorting (3-5x speedup)
+- Batch inode mapping (one find for the whole mount point)
+- Parallel FIEMAP analysis
+- Parallel sorting
 - Real-time progress monitoring
 - Performance profiling
 - Resource monitoring
 - Web dashboard (optional)
 
+When --parallel helps: it pays off when each file spends time waiting on I/O
+(slow disks, network storage). On fast local storage such as an NVMe SSD the
+default sequential mode is faster, because starting workers and collecting
+results costs more than the work per file. The README has the measurements.
+
 Usage:
     python processing.py                          # Original sequential mode
-    python processing.py --parallel               # Parallel mode (recommended)
+    python processing.py --parallel               # Parallel mode (slow or network storage)
     python processing.py --parallel --dashboard   # With web dashboard
     python processing.py --benchmark              # Compare modes
 """
@@ -444,7 +449,7 @@ Examples:
   # Original sequential mode
   python processing.py
   
-  # Parallel mode (recommended)
+  # Parallel mode (slow or network storage)
   python processing.py --parallel --workers 8
   
   # With real-time dashboard
@@ -459,7 +464,9 @@ Examples:
     )
     
     parser.add_argument('--parallel', action='store_true',
-                       help='Enable parallel processing (10-50x faster)')
+                       help='Enable parallel processing. Faster only when each '
+                            'file waits on I/O (slow or network storage); slower '
+                            'than the default sequential mode on fast local storage')
     parser.add_argument('--workers', type=int, default=None,
                        help='Number of worker threads (auto-detect if not specified)')
     parser.add_argument('--mount-point', default='/mnt',
@@ -513,7 +520,8 @@ Examples:
             # Sequential mode (default for backward compatibility)
             if not args.quiet:
                 print("Running in sequential mode (original)")
-                print("Tip: Use --parallel for 10-50x speedup")
+                print("Tip: --parallel helps only when each file waits on I/O "
+                      "(slow or network storage); on fast local storage it is slower")
                 print()
             
             process_trace_sequential(args.mount_point)
