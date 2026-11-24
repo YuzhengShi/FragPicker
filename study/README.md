@@ -25,7 +25,11 @@ The code under test is exported from git (`upstream` at 796df86, this fork's
 | `experiments/e3_phase1.py` | Phase 1 cost against trace length, by file system |
 | `experiments/e4_fiemap.py` | cost and device reads of one extent lookup, by file system and extent count |
 | `experiments/e5_latency.py` | `time.sleep` vs dm-delay vs a one-request-at-a-time device |
+| `experiments/e5b_decompose.py` | E5's cold reads split into the tree walk and the per-file lookups |
+| `experiments/e7_calibrate.sh`, `e7b_dmdelay_effective.sh` | the virtual disk's cold reads; the delay and concurrency each slow-device model really gives |
+| `experiments/e8_gil.py` | FIEMAP request size (1,824 vs 984 bytes) x threads or processes x device concurrency |
 | `analysis/report.py` | every table (`results/*.md`), figure (`figs/`) and quoted number (`results/numbers.json`) |
+| `analysis/perturb.py` | flags 5-minute windows in which runs of every configuration were slow together (external load) |
 | `data/` | raw JSON lines, one per run, with commit hashes and kernel; `EXCLUDE.json` lists dropped rows and why |
 | `paper/` | LaTeX source of the paper draft (`main.tex`) |
 
@@ -46,8 +50,10 @@ MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04-D --exec bash /mnt/d/fragpicker-study/for
 extracted kernel headers (`bin/setup_bcc_headers.sh`), runs the experiment in a private
 mount namespace with the file system under test at `/mnt` (upstream hard-codes `/mnt`;
 WSL keeps the Windows drives under it), and copies the raw data back into `data/`.
-`bin/run_batch1.sh` runs E2-E5 and E1b in sequence; `bin/cleanup_devices.sh` removes
-loop, dm and nbd devices left by an interrupted run.
+`bin/run_batch1.sh`, `bin/run_batch2.sh` and `bin/run_batch3.sh` run every experiment
+after E0/E1 in sequence, one at a time (their headers say which steps moved between
+them and why); `bin/cleanup_devices.sh` removes loop, dm and nbd devices left by an
+interrupted run.
 
 Then `python3 analysis/report.py` rebuilds `results/` and `figs/` from `data/`.
 

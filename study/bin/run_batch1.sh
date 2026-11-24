@@ -14,8 +14,7 @@ step e3_phase1.py --reps 10
 step e2_ladder.py --T 10000 --F 1,10,100,1000,10000 --cache warm --reps 10 --budget-s 600
 step e2_real.py --reps 7
 step e2_ladder.py --T 10000 --F 1,10,100,1000,10000 --cache cold --reps 10 --budget-s 600
-step e2_ladder.py --T 1000 --F 100,1000 --cache warm --reps 10 --budget-s 600
-step e2_ladder.py --T 100000 --F 100,1000 --cache warm --reps 10 --budget-s 900
-step e2_ladder.py --T 10000 --F 1000 --cache cold --delay-ms 5 --rungs a,c,d1,d8,d16,e8 --reps 5 --budget-s 900 --out e2_delay.jsonl
-step e1b_artifact_scripts.sh
+# The last four steps of the original batch 1 (T=1000, T=100000, e2 under dm-delay, E1b)
+# moved to run_batch2.sh on 2026-11-24 with unchanged arguments; in that run batch 1
+# skipped them (its log says "skipped (moved to batch 2)").
 echo "batch1 end $(date -u +%FT%TZ)" >> $log

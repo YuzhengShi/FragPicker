@@ -7,7 +7,7 @@ Everything needed to repeat this study is in the \texttt{study/} directory of th
 \item \texttt{study/lib/fpstudy/}: the single-threaded rewrite (\texttt{fastpath.py}),
   the ladder runner, loop-device, dm-delay and NBD helpers, corpus and trace
   generators, and the statistics.
-\item \texttt{study/experiments/}: one driver per experiment (E0--E5), each writing one
+\item \texttt{study/experiments/}: one driver per experiment (E0--E8), each writing one
   JSON line per run with the commit hashes of the code under test, the kernel
   release and the full configuration.
 \item \texttt{study/data/}: the raw results behind every number in this paper,
@@ -15,12 +15,14 @@ Everything needed to repeat this study is in the \texttt{study/} directory of th
   dropped and why.
 \item \texttt{study/analysis/report.py}: regenerates every table, every figure and
   \texttt{results/numbers.json}, which maps each number quoted in the text to the
-  file it came from.
+  file it came from; \texttt{study/analysis/perturb.py} checks the raw data for
+  windows of external load (\S\ref{sec:method}).
 \end{itemize}
 The code under test is exported unmodified from git (upstream 796df86, fork
 c162012). Each experiment starts with one command,
 \texttt{study/bin/run\_exp.sh <driver> [options]}, which copies the code, prepares BCC's
 kernel headers, runs the driver in a private mount namespace with the file system
 under test at \texttt{/mnt}, and copies the results back. \texttt{study/README.md}
-lists the packages and the exact invocations; \texttt{study/bin/run\_batch1.sh} runs the
-whole local batch in about \textbf{X} hours on our machine.
+lists the packages and the exact invocations; \texttt{study/bin/run\_batch1.sh},
+\texttt{run\_batch2.sh} and \texttt{run\_batch3.sh} run every local experiment after
+E0 and E1, one at a time, in about \textbf{[X]} hours on our machine.

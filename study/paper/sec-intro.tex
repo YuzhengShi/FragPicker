@@ -29,16 +29,25 @@ Our findings:
   extents and then discards them. Its only effect on the output is to drop files on
   file systems without FIEMAP, where it lists none at all (\S\ref{sec:correct}).
 \item \textbf{The original's cost is process creation and repeated tree walks.}
-  \textbf{[E2/E3 numbers: Phase 1 per line, Phase 2 per file, scaling with $T$.]}
-\item \textbf{A single thread beats every parallel configuration.} A 200-line rewrite
-  that produces byte-identical output is \textbf{[X]}$\times$ faster than upstream and
-  \textbf{[Y]}$\times$ faster than the best parallel configuration on the same traces
-  (\S\ref{sec:ladder}).
+  Phase~1 makes about 41 system calls per trace line (74\,\textmu s), most of them
+  one-byte reads; Phase~2 starts a \texttt{find} over the whole tree, a \texttt{sort}
+  and an \texttt{mv} for every traced file, 8.1\,ms per file in a tree of 1{,}000 files
+  and 15\,ms in one of 10{,}000 (\S\ref{sec:anatomy}, \S\ref{sec:ladder}).
+\item \textbf{A single thread beats every parallel configuration.} On five real traces,
+  a 226-line rewrite that produces byte-identical output runs upstream's
+  \texttt{processing.py} 4--191$\times$ faster, and 19--26$\times$ faster than the best
+  parallel configuration (\S\ref{sec:anatomy}, \S\ref{sec:ladder}).
+  % recheck both ranges after the sqlite3 repeat
 \item \textbf{The speedup came from the latency model.} With a 5\,ms user-space delay
-  we reproduce a \textbf{[Z]}$\times$ speedup; with the same delay injected at the block
-  layer, files created together need \textbf{[R]} device reads in total and threads
-  gain \textbf{[S]}; on a device that serves one request at a time they gain nothing
-  (\S\ref{sec:models}).
+  we reproduce a 15.5$\times$ speedup; with the same delay injected at the block
+  layer, the lookups of 1{,}000 files created together read 192\,KiB from the device
+  in all, and 16 threads run at 0.47$\times$ the speed of one; on a device that serves
+  one request at a time they gain nothing either (\S\ref{sec:models}).
+\item \textbf{Even real device waits did not overlap.} In a scattered tree, the reads
+  happen in the tree walk, before the threads start (\S\ref{sec:decompose}). Where
+  every lookup must read an extent block of its own, the fork's 1{,}824-byte FIEMAP
+  request keeps CPython's interpreter lock held through the wait: 16 threads gain
+  1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}).
 \item \textbf{The trace itself is lossy.} Upstream's stop procedure loses the last
   buffered chunk of events, positions above 4\,GiB wrap around, and inode numbers
   from other file systems can be attributed to files under \texttt{/mnt}
