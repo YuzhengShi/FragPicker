@@ -322,14 +322,16 @@ def e5(data, out):
     rows = load(p)
     cells = collections.defaultdict(list)
     io = collections.defaultdict(list)
+    iokb = collections.defaultdict(list)
     for r in rows:
         k = (r["layout"], r["model"], r["delay_ms"], r["cache"], r["workers"])
         cells[k].append(r["wall_s"])
         if r.get("io"):
             io[k].append(r["io"].get("read_ios", 0))
+            iokb[k].append(r["io"].get("read_sectors", 0) // 2)
     lines = ["| layout | model | delay (ms) | cache | sequential loop (s) | 1 thread | 4 | 8 | 16 | "
              "speedup 16 vs sequential | device reads (seq) |", "|---|---|---|---|---|---|---|---|---|---|---|"]
-    groups = sorted({k[:4] for k in cells}, key=str)
+    groups = sorted({k[:4] for k in cells}, key=lambda g: (g[0], g[1], g[2], g[3]))
     for g in groups:
         def m(w):
             x = cells.get(g + (w,))
@@ -343,6 +345,47 @@ def e5(data, out):
         num("e5.%s.%s.d%d.%s.speedup16" % g, list(sp), "e5_latency.jsonl")
         num("e5.%s.%s.d%d.%s.seq_s" % g, m(0), "e5_latency.jsonl")
     write_md(out, "e5_latency.md", "\n".join(lines) + "\n")
+    # paper figure: absolute time against threads for one delay, both layouts
+    series = [("sleep", "warm", "user-space sleep (fork's method)"),
+              ("dmdelay", "cold", "dm-delay, cold cache"),
+              ("qd1", "cold", "one request at a time, cold cache"),
+              ("dmdelay", "warm", "dm-delay, warm cache")]
+    xs_lab = ["seq", "1", "2", "4", "8", "16"]
+    for d in sorted({g[2] for g in groups}):
+        fig, axs = plt.subplots(1, 2, figsize=(7.2, 2.9), sharey=True)
+        for ax, layout, ttl in ((axs[0], "together", "1,000 files created together"),
+                                (axs[1], "scattered", "1,000 of 100,000 files")):
+            for si, (model, cache, lab) in enumerate(series):
+                g = (layout, model, d, cache)
+                ys, lo, hi, xs = [], [], [], []
+                for xi, w in enumerate((0, 1, 2, 4, 8, 16)):
+                    x = cells.get(g + (w,))
+                    if not x:
+                        continue
+                    mm, l_, h_ = median_ci(x)
+                    xs.append(xi); ys.append(mm)
+                    lo.append(mm - (l_ if not math.isnan(l_) else mm))
+                    hi.append((h_ if not math.isnan(h_) else mm) - mm)
+                if xs:
+                    ax.errorbar(xs, ys, yerr=[lo, hi], color=C[si], marker=MARK[si], ms=5, lw=1.6,
+                                capsize=2, label=lab)
+                    kb = iokb.get(g + (0,))
+                    if kb and model == "dmdelay" and cache == "cold":
+                        v = sorted(kb)[len(kb) // 2]
+                        ax.annotate("device read %s" % ("%d KiB" % v if v < 4096 else "%.1f MiB" % (v / 1024.0)),
+                                    (xs[0], ys[0]), textcoords="offset points", xytext=(0, 8),
+                                    fontsize=6.5, color=INK2)
+            ax.set_xticks(range(6))
+            ax.set_xticklabels(xs_lab)
+            ax.set_yscale("log")
+            ax.set_xlabel("threads", fontsize=8)
+            ax.set_title(ttl, fontsize=8, color=INK)
+            style(ax)
+        axs[0].set_ylabel("wall time (s), median, 95% CI")
+        h, l_ = axs[0].get_legend_handles_labels()
+        fig.legend(h, l_, fontsize=7, frameon=False, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 0.0))
+        fig.suptitle("Extent lookups of 1,000 traced files, delay %d ms" % d, fontsize=8.5, color=INK, y=1.02)
+        save(fig, out, "e5_models_d%d" % d)
     for layout in sorted({g[0] for g in groups}):
         for d in sorted({g[2] for g in groups if g[0] == layout}):
             fig, ax = plt.subplots(figsize=(4.6, 3.2))
@@ -466,6 +509,62 @@ def e2real(data, out):
         save(fig, out, "e2real_breakdown_%s" % cache)
 
 
+def e5b(data, out):
+    p = os.path.join(data, "e5b_decompose.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    cells = collections.defaultdict(list)
+    for r in rows:
+        k = (r["layout"], r["model"], r["delay_ms"], r["measure"])
+        cells[k + ("walk_s",)].append(r.get("walk_s"))
+        cells[k + ("files_s",)].append(r.get("files_s"))
+        cells[k + ("walk_reads",)].append((r.get("io_walk") or {}).get("read_ios"))
+        cells[k + ("files_reads",)].append((r.get("io_files") or {}).get("read_ios"))
+
+    def med(k):
+        x = [v for v in cells.get(k, []) if v is not None]
+        return median_ci(x) if x else (float("nan"),) * 3
+
+    groups = sorted({k[:3] for k in cells})
+    lines = ["| layout | model | delay (ms) | walk alone (s) | walk reads | after walk: lookups (s) | lookup reads | "
+             "paths known, 1 thread (s) | 4 threads | 16 threads | reads, paths known | speedup 16 vs 1 |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for g in groups:
+        w = med(g + ("walk", "walk_s")); wr = med(g + ("walk", "walk_reads"))
+        f = med(g + ("walk+files", "files_s")); fr = med(g + ("walk+files", "files_reads"))
+        t1 = cells.get(g + ("files-only/1", "files_s"), [])
+        t4 = med(g + ("files-only/4", "files_s"))
+        t16 = cells.get(g + ("files-only/16", "files_s"), [])
+        rr = med(g + ("files-only/1", "files_reads"))
+        sp = ratio_ci(t1, t16) if t1 and t16 else (float("nan"),) * 3
+        lines.append("| %s | %s | %d | %.3f | %.0f | %.3f | %.0f | %.3f | %.3f | %.3f | %.0f | %.2f [%.2f, %.2f] |" % (
+            g[0], g[1], g[2], w[0], wr[0], f[0], fr[0], median_ci(t1)[0] if t1 else float("nan"),
+            t4[0], median_ci(t16)[0] if t16 else float("nan"), rr[0], sp[0], sp[1], sp[2]))
+        key = "e5b.%s.%s.d%d" % g
+        num(key + ".walk_s", list(w), "e5b_decompose.jsonl")
+        num(key + ".walk_reads", wr[0], "e5b_decompose.jsonl")
+        num(key + ".lookups_after_walk_s", list(f), "e5b_decompose.jsonl")
+        num(key + ".lookup_reads_after_walk", fr[0], "e5b_decompose.jsonl")
+        num(key + ".paths_known_reads", rr[0], "e5b_decompose.jsonl")
+        num(key + ".paths_known_speedup16", list(sp), "e5b_decompose.jsonl")
+    write_md(out, "e5b_decompose.md", "\n".join(lines) + "\n")
+
+
+def e7(data, out):
+    p = os.path.join(data, "e7_calibrate.jsonl")
+    if not os.path.exists(p):
+        return
+    rows = load(p)
+    lines = ["| pass | iodepth | IOPS | mean latency (us) | p50 (us) | p99 (us) |", "|---|---|---|---|---|---|"]
+    for r in rows:
+        lines.append("| %s | %d | %.0f | %.1f | %.1f | %.1f |" % (
+            r["pass"], r["iodepth"], r["iops"], r["lat_mean_us"], r["clat_p50_us"], r["clat_p99_us"]))
+        num("e7.%s.qd%d.p50_us" % (r["pass"], r["iodepth"]), r["clat_p50_us"], "e7_calibrate.jsonl")
+        num("e7.%s.qd%d.iops" % (r["pass"], r["iodepth"]), r["iops"], "e7_calibrate.jsonl")
+    write_md(out, "e7_calibrate.md", "\n".join(lines) + "\n")
+
+
 def tex_tables(out):
     """LaTeX tables for the paper, filled from NUMBERS only (so every cell traces back
     to numbers.json and from there to a raw file)."""
@@ -518,7 +617,7 @@ def main():
     exf = os.path.join(a.data, "EXCLUDE.json")
     if os.path.exists(exf):
         EXCLUDE.update(json.load(open(exf)))
-    for f in (e1, e0, e2, e2real, e3, e4, e5):
+    for f in (e1, e0, e2, e2real, e3, e4, e5, e5b, e7):
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")
     tex_tables(a.out)

@@ -1,0 +1,4 @@
+{"exp":"e1c","step":"processing","traced_files":50,"trace_lines":200,"tree_files":200,"processes_created":150,"successful_execve":151,"openat":5873,"write":301}
+{"exp":"e1c","step":"merge","traced_files":50,"trace_lines":200,"tree_files":200,"processes_created":50,"successful_execve":51,"openat":1966,"write":50}
+{"exp":"e1c","step":"hotness","traced_files":50,"trace_lines":200,"tree_files":200,"processes_created":500,"successful_execve":301,"openat":8684,"write":400}
+{"exp":"e1c","step":"fastpath_full","traced_files":50,"trace_lines":200,"tree_files":200,"processes_created":0,"successful_execve":1,"openat":235,"write":151}
