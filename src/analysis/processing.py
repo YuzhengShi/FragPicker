@@ -36,13 +36,26 @@ try:
     from parallel_analyzer.parallel_processor import EnhancedParallelProcessor
     from parallel_analyzer.parallel_sorter import parallel_sort_directory
     from parallel_analyzer.performance_analyzer import get_analyzer
-    from parallel_analyzer.progress_monitor import TerminalDashboard
     
     PARALLEL_AVAILABLE = True
     logger = get_logger(__name__)
 except ImportError as e:
     print(f"Warning: Parallel optimization modules not available: {e}")
     print("Running in sequential mode only")
+
+
+def _load_terminal_dashboard():
+    """
+    Return the TerminalDashboard class.
+
+    It is defined in tools/dashboard.py, not in the parallel_analyzer package,
+    so it is imported on demand, only for --dashboard.
+    """
+    tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             '..', '..', 'tools')
+    sys.path.insert(0, tools_dir)
+    from dashboard import TerminalDashboard
+    return TerminalDashboard
 
 
 def simplecount(filename):
@@ -226,9 +239,14 @@ def process_trace_parallel(mount_point="/mnt", num_workers=None,
     # Start dashboard if requested
     dashboard = None
     if enable_dashboard:
-        dashboard = TerminalDashboard()
-        dashboard.start()
-        dashboard.update_state(status='running', stage='Initialization')
+        try:
+            dashboard = _load_terminal_dashboard()()
+        except ImportError as e:
+            print(f"Warning: --dashboard needs tools/dashboard.py ({e}); "
+                  "continuing without it")
+        else:
+            dashboard.start()
+            dashboard.update_state(status='running', stage='Initialization')
     
     analyzer = get_analyzer() if enable_profiling else None
     overall_start = time.time()
@@ -307,7 +325,7 @@ def process_trace_parallel(mount_point="/mnt", num_workers=None,
         processor = EnhancedParallelProcessor(
             num_workers=config.parallel.num_workers,
             mount_point=mount_point,
-            enable_monitoring=not enable_dashboard,  # Use dashboard instead
+            enable_monitoring=dashboard is None,  # The dashboard replaces the progress bars
             enable_profiling=enable_profiling
         )
         

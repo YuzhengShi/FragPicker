@@ -12,7 +12,7 @@ python3 processing.py [OPTIONS]
   --parallel              Process files with the parallel engine
   --workers N             Number of workers (auto-tuned when omitted)
   --mount-point PATH      Mount point to search (default: /mnt)
-  --dashboard             Show a terminal dashboard while running
+  --dashboard             Show a terminal dashboard while running (needs tools/dashboard.py)
   --profile               Collect profiling data
   --benchmark             Compare sequential and parallel on the current trace
   --config FILE           Load a YAML configuration file

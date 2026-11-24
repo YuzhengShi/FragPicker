@@ -13,7 +13,7 @@ src/analysis/
     parallel_sorter.py          parallel sort of per-file results
     config.py, logger.py        configuration and structured logging
     performance_analyzer.py     profiling
-    progress_monitor.py         progress and terminal dashboard
+    progress_monitor.py         progress bars and resource monitor
   trace.sh, parse.sh, merge.py, hotness.sh, ...   upstream scripts
 src/migration/                  upstream migration phase (FragPicker_OP.py, FragPicker_IP.py, ...)
 tests/                          unit, correctness, stress and slow-I/O tests
