@@ -1,0 +1,2 @@
+src/analysis/analyze.sh: line 76: syntax error near unexpected token `;'
+src/analysis/analyze.sh: line 76: `if ! ./trace.sh "$PROCESS_NAME" &; then'

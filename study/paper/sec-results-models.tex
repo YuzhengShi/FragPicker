@@ -4,7 +4,8 @@
 Figure~\ref{fig:models} runs the code the fork benchmarked, its thread engine over
 1{,}000 traced files plus the plain sequential loop its results file calls
 ``sequential'', under the three slow-device models of \S\ref{sec:method}, with a
-5\,ms delay. Table~\ref{tab:models} gives the 1\,ms and 10\,ms cases.
+configured delay of 5\,ms (8.0\,ms per read under dm-delay and 5.6\,ms under NBD, as
+measured). Table~\ref{tab:models} gives the 1\,ms and 10\,ms cases.
 
 \begin{figure*}[t]
 \centering
@@ -25,7 +26,7 @@ machine). The model's prediction does not depend on the files at all: the scatte
 case gives 11.0$\times$.
 
 \paragraph{With the delay at the block layer, there is nothing to overlap.} When the
-same 5\,ms is added to every read that reaches the device, the 1{,}000 files created
+delay is added instead to every read that reaches the device, the 1{,}000 files created
 together are looked up in 0.164\,s from a cold cache by the sequential loop, 32 times
 faster than the user-space model predicts, because the whole job reads only 192\,KiB
 from the device: the directory blocks and a few inode-table blocks, each of which

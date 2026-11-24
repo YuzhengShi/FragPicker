@@ -3,7 +3,8 @@
 
 Figure~\ref{fig:ladder} runs every rung on synthetic traces of $F$ traced files, chosen
 at random from a tree of $T = 10{,}000$ files of 16\,KB, 20 requests per file, with a
-warm cache. All rungs produced identical output in every cell.
+warm cache. All rungs produced identical output in every cell, here and in the
+cold-cache runs and other tree sizes below.
 
 \begin{figure}[t]
 \centering
@@ -14,27 +15,43 @@ in the tree, warm cache). Medians with 95\% bootstrap intervals; rungs as in
 \label{fig:ladder}
 \end{figure}
 
-\paragraph{Upstream grows with $F \times T$.} Upstream costs about \textbf{[15]}\,ms per
-traced file in this tree: one \texttt{find} over 10{,}000 entries plus a \texttt{sort}
-and an \texttt{mv}. With 1{,}000 traced files it takes \textbf{[15.1]}\,s; the fork's
-sequential path is the same code and the same time.
+\paragraph{Upstream is linear in $F$, and every traced file pays for a walk of the
+whole tree.} Upstream costs 15.0--15.3\,ms per traced file in this tree at every $F$
+from 100 to 10{,}000 (15.0\,s for 1{,}000 traced files, 151\,s for 10{,}000): one
+\texttt{find} over all 10{,}000 entries, then a \texttt{sort} and an \texttt{mv}. With
+1{,}000 traced files in a tree of 1{,}000 files it costs 8.1\,ms per traced
+file\textbf{[, in a tree of 100{,}000 X\,ms]}: about 7\,ms of it does not depend on the
+tree (it is mostly the cost of starting processes), and the rest grows by about
+0.8\,\textmu s per entry in the tree. The fork's sequential path runs the same commands
+and costs the same per traced file; it starts about 0.11\,s later, because it imports
+the parallel engine's modules even without \texttt{--parallel}.
 
-\paragraph{The parallel path has a floor of a second.} Every \texttt{--parallel} run
-costs at least \textbf{[1.27]}\,s, even for one traced file, whatever the thread count.
-Most of it is the resource-monitor thread that \texttt{processing.py} enables whenever
-no dashboard is requested: it samples, sleeps for one second, and is joined only after
-that sleep ends. The fork's own benchmark scripts turn monitoring off, so this cost
-never appeared in its results.
+\paragraph{The parallel path has a floor of more than a second.} Every
+\texttt{--parallel} run costs at least 1.27\,s, even for one traced file and whatever
+the thread count, where the rewrite needs 0.064\,s for the same input. Most of the
+difference is the resource-monitor thread that \texttt{processing.py} enables whenever
+no dashboard is requested: it takes a sample, sleeps for one second, and its
+\texttt{stop()} waits for that sleep to end. Replacing the monitor with a no-op (rung m)
+brings the one-file run down to \textbf{[m1]}\,s. The fork's own benchmark scripts
+construct the engine with \texttt{enable\_monitoring=False}, so this cost never
+appeared in its results.
 
 \paragraph{The rewrite beats every thread count.} At $F = 1{,}000$ the rewrite takes
-\textbf{[0.19]}\,s, \textbf{[80]}$\times$ faster than upstream and \textbf{[25]}$\times$
-faster than the best parallel setting (\textbf{[4.76]}\,s with 8 threads). The parallel
-path is faster than upstream only because its single walk replaces the per-file
-\texttt{find}; it still starts two \texttt{sort} processes per file, one for the
-discarded extents and one for the request file. Replacing the extent lookup with a stub
-(rung e) saves 24\% at $F = 1{,}000$ (3.55\,s against 4.68\,s) and 7\% at $F = 10{,}000$
-(34.3\,s against 36.7\,s): the lookups the threads were added to overlap are a minor
-part of the parallel path's own time, which goes mostly to creating \texttt{sort}
-processes. In McSherry et al.'s
-terms~\cite{mcsherry2015cost}, the parallel engine's COST is unbounded: no thread count
-we tried outperforms the single thread.
+0.19\,s, 80$\times$ faster than upstream (95\% CI 78--81) and 25$\times$ faster than the
+best parallel setting (4.68\,s with 8 threads; CI 24--25). At $F = 10{,}000$ the factors
+are 104$\times$ and 25$\times$ (1.46\,s against 151\,s and 36.7\,s). The parallel path is
+faster than upstream only because its single walk replaces the per-file \texttt{find};
+it still starts two \texttt{sort} processes per file, one for the discarded extents and
+one for the request file. Replacing the extent lookup with a stub (rung e) saves 24\% at
+$F = 1{,}000$ (3.55\,s against 4.68\,s) and 7\% at $F = 10{,}000$ (34.3\,s against
+36.7\,s): the lookups the threads were added to overlap are a minor part of the parallel
+path's own time, which goes mostly to creating \texttt{sort} processes. In McSherry et
+al.'s terms~\cite{mcsherry2015cost}, the parallel engine's COST is unbounded: no thread
+count we tried outperforms the single-threaded rewrite.
+
+\paragraph{A cold cache adds a fixed cost.} With the caches dropped and the file system
+remounted before every run, each run first reads the interpreter, the tools and the
+tree's metadata from the device again. The rewrite becomes 0.12--0.36\,s slower, which
+at $F = 1{,}000$ lowers its advantage to 49$\times$ over upstream and 15$\times$ over the
+best parallel setting. The process-heavy rungs were 6--14\% slower at $F = 10{,}000$;
+\textbf{[drift check: warm d8 re-measured in batch 3]}.

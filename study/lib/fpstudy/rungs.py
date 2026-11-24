@@ -8,6 +8,8 @@ Rungs (study/PLAN.md, RQ2):
   d<W> fork processing.py --parallel --workers W
   e<W> like d<W> but FiemapAnalyzer.get_extents replaced by a stub returning []
        (isolates the cost of the FIEMAP whose result nothing downstream reads)
+  m<W> like d<W> but the engine's BackgroundMonitor replaced by a no-op (isolates the
+       resource-monitor thread, whose stop() waits out its 1 s sleep)
 
 All rungs read ./trace.result in a fresh working directory and scan /mnt, so the
 caller must have mounted the file system under test at /mnt (inside a private
@@ -40,6 +42,23 @@ _f.FiemapAnalyzer.get_extents = _stub
 runpy.run_path(%(fk)r + "/processing.py", run_name="__main__")
 '''
 
+# parallel_processor imports BackgroundMonitor by name, so the stub replaces that name
+STUB_M = r'''
+import sys, runpy
+sys.path.insert(0, %(fk)r)
+sys.argv = ["processing.py"] + sys.argv[1:]
+from parallel_analyzer import parallel_processor as _pp
+class _NoMonitor:
+    def __init__(self, *args, **kwargs):
+        pass
+    def start(self):
+        pass
+    def stop(self):
+        return {}
+_pp.BackgroundMonitor = _NoMonitor
+runpy.run_path(%(fk)r + "/processing.py", run_name="__main__")
+'''
+
 
 def rung_cmd(rung):
     py = sys.executable
@@ -60,6 +79,12 @@ def rung_cmd(rung):
         stub = os.path.join(os.environ.get("FPSTUDY_WORK", "/root/fpstudy/work"), "stub_e.py")
         with open(stub, "w") as f:
             f.write(STUB_E % {"fk": FK})
+        return [py, stub, "--parallel", "--workers", str(w), "--mount-point", "/mnt"], FK
+    if rung.startswith("m"):
+        w = int(rung[1:])
+        stub = os.path.join(os.environ.get("FPSTUDY_WORK", "/root/fpstudy/work"), "stub_m.py")
+        with open(stub, "w") as f:
+            f.write(STUB_M % {"fk": FK})
         return [py, stub, "--parallel", "--workers", str(w), "--mount-point", "/mnt"], FK
     raise ValueError(rung)
 

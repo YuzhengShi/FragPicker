@@ -31,8 +31,9 @@ RUNG_LABEL = {
     "d1": "(d) --parallel, 1 thread", "d4": "(d) --parallel, 4 threads",
     "d8": "(d) --parallel, 8 threads", "d16": "(d) --parallel, 16 threads",
     "e8": "(e) 8 threads, no FIEMAP",
+    "m1": "(d) 1 thread, no monitor thread", "m8": "(d) 8 threads, no monitor thread",
 }
-RUNG_ORDER = ["a", "b", "c", "d1", "d4", "d8", "d16", "e8"]
+RUNG_ORDER = ["a", "b", "c", "d1", "d4", "d8", "d16", "e8", "m1", "m8"]
 # rungs drawn in the paper's ladder figures, each with a fixed colour and marker
 RUNG_FIG = ["a", "c", "d1", "d8", "e8"]
 RUNG_STYLE = {"a": 0, "c": 1, "d1": 2, "d8": 3, "e8": 4, "b": 5, "d4": 6, "d16": 7}
@@ -177,11 +178,12 @@ def e2(data, out, fname="e2_ladder.jsonl", tag="e2"):
         cells[(r["fs"], r["T"], r["F"], r["cache"], r.get("delay_ms"), r["rung"])].append(r["wall_s"])
     # table
     keys = sorted({k[:5] for k in cells}, key=lambda k: (k[0], str(k[3]), str(k[4]), k[1], k[2]))
-    lines = ["| fs | T | F | cache | delay | " + " | ".join(RUNG_LABEL.get(x, x) for x in RUNG_ORDER) + " |",
-             "|---|---|---|---|---|" + "---|" * len(RUNG_ORDER)]
+    order = [rg for rg in RUNG_ORDER if any(k[5] == rg for k in cells)]  # columns with data
+    lines = ["| fs | T | F | cache | delay | " + " | ".join(RUNG_LABEL.get(x, x) for x in order) + " |",
+             "|---|---|---|---|---|" + "---|" * len(order)]
     for k in keys:
         vals = []
-        for rg in RUNG_ORDER:
+        for rg in order:
             x = cells.get(k + (rg,))
             vals.append("%.3g" % median_ci(x)[0] if x else "")
         lines.append("| %s | %d | %d | %s | %s | " % (k[0], k[1], k[2], k[3], k[4]) + " | ".join(vals) + " |")
@@ -202,6 +204,33 @@ def e2(data, out, fname="e2_ladder.jsonl", tag="e2"):
             c = cells.get(k + ("c",))
             if c and rg.startswith("d"):
                 num(key + ".slowdown_vs_c", list(ratio_ci(x, c)), fname)
+            d = cells.get(k + ("d" + rg[1:],))
+            if d and rg.startswith("m"):  # what the monitor thread costs: d<W> against m<W>
+                num(key + ".d_over_m", list(ratio_ci(d, x)), fname)
+                num(key + ".d_minus_m_s", median_ci(d)[0] - m, fname)
+    for k in keys:  # a cold cell against the same warm cell
+        kw = (k[0], k[1], k[2], "warm", k[4])
+        if k[3] != "cold" or kw not in keys:
+            continue
+        for rg in order:
+            xc, xw = cells.get(k + (rg,)), cells.get(kw + (rg,))
+            if xc and xw:
+                num("%s.%s.T%d.F%d.%s.cold_over_warm.%s" % (tag, k[0], k[1], k[2], k[4], rg),
+                    list(ratio_ci(xc, xw)), fname)
+    # upstream's cost per traced file against the tree size (warm, no delay, F = 1000),
+    # with a least-squares fit cost = fixed + per_entry * T
+    pts = []
+    for k in keys:
+        if k[2] == 1000 and k[3] == "warm" and k[4] is None and cells.get(k + ("a",)):
+            ms = 1000.0 * median_ci(cells[k + ("a",)])[0] / k[2]
+            pts.append((k[1], ms))
+            num("%s.%s.T%d.upstream_ms_per_traced_file" % (tag, k[0], k[1]), ms, fname)
+    if len(pts) >= 2:
+        mt = sum(t for t, _ in pts) / len(pts)
+        my = sum(y for _, y in pts) / len(pts)
+        beta = sum((t - mt) * (y - my) for t, y in pts) / sum((t - mt) ** 2 for t, _ in pts)
+        num("%s.upstream_fit.fixed_ms" % tag, my - beta * mt, fname)
+        num("%s.upstream_fit.us_per_tree_entry" % tag, 1000.0 * beta, fname)
     # figure: wall time vs F for each (fs, T, cache, delay) group
     groups = sorted({(k[0], k[1], k[3], k[4]) for k in keys}, key=str)
     for g in groups:
@@ -807,6 +836,7 @@ def main():
     for f in (e1, e0, e2, e2real, e3, e4, e5, e5b, e7, e7b, e8):
         f(a.data, a.out)
     e2(a.data, a.out, "e2_delay.jsonl", "e2delay")
+    e2(a.data, a.out, "e2_monitor.jsonl", "e2monitor")
     tex_tables(a.out)
     os.makedirs(os.path.join(a.out, "results"), exist_ok=True)
     with open(os.path.join(a.out, "results", "numbers.json"), "w") as f:

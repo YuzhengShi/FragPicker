@@ -4,7 +4,20 @@
 In the scattered case of Figure~\ref{fig:models} the device is busy, yet threads do not
 help. Table~\ref{tab:decompose} splits a cold run into the tree walk that builds the
 inode map and the per-file lookups that follow it, and counts device reads in each
-part: \textbf{[E5b results pending]}.
+part. The walk reads 29\,MiB, the directory and inode-table blocks of the whole tree,
+and takes 9.8\,s under dm-delay and 9.4\,s on the one-request-at-a-time device. The
+1{,}000 lookups that follow it read nothing more from the device and take 35\,ms: the
+walk has already brought in every inode they need. The threads therefore start only
+after the device work is done.
+
+Only when the paths are known without a walk do the lookups themselves read from the
+device (27\,MiB, brought in by path resolution in the \texttt{stat} and \texttt{open}
+calls, which release the interpreter lock while they wait). Then 16 threads do overlap
+the reads, 13$\times$ under dm-delay (6.67\,s against 0.52\,s), but not on the
+one-request-at-a-time device (6.97\,s against 6.59\,s). Even this best case needs a way
+to find the traced files without walking the tree, which the fork does not have; and
+the FIEMAP calls, the part the fork parallelised, need no read of their own here,
+because these files' extents fit in their inodes (\S\ref{sec:fiemap}).
 
 \begin{table}[t]
 \caption{A cold run of the scattered case split into the inode-map walk and the

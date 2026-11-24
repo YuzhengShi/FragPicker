@@ -5,8 +5,10 @@
 Figure~\ref{fig:phase1} times upstream's Phase~1 on its own (the first 61 lines of the
 unmodified \texttt{processing.py}, cut programmatically) against the rewrite's
 in-memory version, which writes the same files. On the WSL root file system the
-upstream loop settles at \textbf{[74]}\,\textmu s per line for long traces: 7.4\,s for
-$10^5$ lines and 73.8\,s for $10^6$, against 0.32\,s and 2.4\,s for the rewrite. A
+upstream loop settles at 74\,\textmu s per line for long traces: 7.4\,s for
+$10^5$ lines and 73.8\,s for $10^6$, against 0.32\,s and 2.4\,s for the rewrite. With
+the working directory on ext4, XFS, Btrfs or F2FS it costs 68--79\,\textmu s per line
+at $10^5$ lines, for one traced file or 1{,}000, so the file system hardly matters. A
 system-call count explains it. For each trace line, Phase~1 makes about 41 calls: 30
 one-byte \texttt{read}s, because upstream opens the trace with \texttt{buffering=0}
 and then calls \texttt{readlines()}, which on an unbuffered file reads one byte at a
@@ -26,7 +28,18 @@ file. Medians of ten runs.}
 \paragraph{Phase 2 and the rest of the pipeline cost fourteen processes per file.}
 Table~\ref{tab:anatomy} (\S\ref{sec:background}) showed the per-file work. On the
 real traces of E0, Table~\ref{tab:real} and Figure~\ref{fig:breakdown} split the whole
-upstream pipeline into its steps: \textbf{[E2-real numbers pending]}.
+upstream pipeline into its steps. When a workload touches many files, the per-file steps
+dominate. For \texttt{tar}, which read 5{,}100 files on the test file system, the
+pipeline takes 165\,s: 97\,s in Phase~2, 56\,s in \texttt{hotness.sh} and 10\,s in
+\texttt{merge.py}, against 1.7\,s in Phase~1. The rewrite does all three steps in
+1.28\,s (129$\times$, 95\% CI 121--133). For \texttt{fio}'s 1{,}000 files the pipeline
+takes 40.4\,s against 0.62\,s (65$\times$). When a workload touches one file, Phase~1
+dominates instead: 83\% of the 0.75\,s for \texttt{read\_seq}\textbf{[; sqlite3 pending
+its repeat, \S\ref{sec:method}]}. The best \texttt{--parallel} setting makes
+\texttt{processing.py} 7.4$\times$ faster than upstream on \texttt{tar} (13.4\,s against
+98.7\,s) and 3.4$\times$ on \texttt{fio}, but slower than upstream on every one-file
+trace (1.81\,s against 0.67\,s for \texttt{read\_seq}), because of its one-second floor
+(\S\ref{sec:ladder}).
 
 \begin{table*}[t]
 \caption{Real traces, warm cache: wall time (s, median of seven runs) of upstream

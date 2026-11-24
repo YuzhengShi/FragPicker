@@ -13,11 +13,23 @@ holds the lock for as long as the kernel takes, including any device read for an
 extent-tree block. The largest request that takes the releasing path holds 17 extents
 (984 bytes).
 
-Table~\ref{tab:gil} isolates the effect. Each of \textbf{[N]} files has 16 extents, so
-FIEMAP must read one extent-tree leaf per file; before each timed pass we drop the
-caches and \texttt{stat} every file, which brings the inodes in through readahead and
-leaves the leaf blocks cold. Both request sizes return identical extents for every
-file. We vary the device: \textbf{[results pending]}.
+Table~\ref{tab:gil} isolates the effect. Each of 200 files has 16 extents, so FIEMAP
+must read one extent-tree leaf per file; before each timed pass we drop the caches and
+\texttt{stat} every file, which brings the inodes in through readahead and leaves the
+leaf blocks cold. Both request sizes return identical extents for every file, and every
+pass reads 1.0 block per file from the device, so one thread takes the device's
+latency per file (8.0\,ms under dm-delay, about 6\,ms on NBD; \S\ref{sec:method}).
+
+When the device serves many requests at once (dm-delay, or NBD with 32 server
+threads), 16 threads finish the 984-byte requests 14.6$\times$ and 14.9$\times$ faster
+than one thread, but the 1{,}824-byte requests, ours or the fork's own
+\texttt{FiemapAnalyzer}, gain nothing: 1.00$\times$ on both devices. Sixteen processes
+issuing the same 1{,}824-byte requests gain 15.0$\times$ and 14.9$\times$, so the
+request size matters only because of the lock. On the device that serves one request at
+a time, nothing gains more than 1.09$\times$. The fork's process engine reaches
+8.1$\times$ and 7.8$\times$; its 16 workers take about 0.1\,s longer than ours, which we
+did not investigate. With no delay, the fork's thread pool is slower than one thread
+(0.107\,s against 0.076\,s).
 
 \begin{table}[t]
 \caption{Speedup of 16 workers over one for FIEMAP calls that each wait for one device

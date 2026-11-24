@@ -1,0 +1,4 @@
+{"exp":"e1b","script":"analyze_sh_syntax","rc":2,"wall_s":0.01,"cmd":"bash -n src/analysis/analyze.sh"}
+{"exp":"e1b","script":"overhead_profiling","rc":1,"wall_s":0.33,"cmd":"python3 benchmarks/overhead_profiling_benchmark.py --files 200 --workers 8"}
+{"exp":"e1b","script":"speedup_benchmark","rc":0,"wall_s":4.15,"cmd":"python3 benchmarks/speedup_benchmark.py"}
+{"exp":"e1b","script":"speedup_slow_io","rc":0,"wall_s":27.68,"cmd":"python3 benchmarks/speedup_slow_io_benchmark.py"}

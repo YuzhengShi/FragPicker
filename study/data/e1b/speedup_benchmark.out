@@ -1,0 +1,238 @@
+======================================================================
+PARALLEL PROCESSING SPEEDUP BENCHMARK
+======================================================================
+
+======================================================================
+Testing with 100 files
+======================================================================
+Creating test corpus: 100 files × 100KB
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.01s (12205.9 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.01s (12453.8 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.01s (13057.4 files/sec)
+
+1 worker:
+  Time:       0.01s
+  Speedup:    1.00x
+  Efficiency: 100.0%
+  Throughput: 12170.5 files/sec
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (5924.5 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (5819.0 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (5705.2 files/sec)
+
+2 workers:
+  Time:       0.02s
+  Speedup:    0.47x
+  Efficiency: 23.7%
+  Throughput: 5758.8 files/sec
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4324.1 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4094.3 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4315.1 files/sec)
+
+4 workers:
+  Time:       0.02s
+  Speedup:    0.35x
+  Efficiency: 8.8%
+  Throughput: 4285.5 files/sec
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4033.3 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4008.6 files/sec)
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 100 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpxwritgty...
+[INodeMapper] Built map with 100 files in 0.00s
+10:12:49 [INFO] parallel_analyzer.parallel_processor: Processing completed: 100/100 files in 0.02s (4060.0 files/sec)
+
+8 workers:
+  Time:       0.02s
+  Speedup:    0.33x
+  Efficiency: 4.1%
+  Throughput: 4005.3 files/sec
+
+======================================================================
+Testing with 500 files
+======================================================================
+Creating test corpus: 500 files × 100KB
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.03s (15739.4 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.03s (18277.7 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.03s (17544.8 files/sec)
+
+1 worker:
+  Time:       0.03s
+  Speedup:    1.00x
+  Efficiency: 100.0%
+  Throughput: 17434.3 files/sec
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.07s (6775.8 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.07s (7122.7 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.07s (6808.8 files/sec)
+
+2 workers:
+  Time:       0.07s
+  Speedup:    0.39x
+  Efficiency: 19.5%
+  Throughput: 6788.7 files/sec
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.10s (5101.2 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.10s (5144.7 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.10s (5189.2 files/sec)
+
+4 workers:
+  Time:       0.10s
+  Speedup:    0.29x
+  Efficiency: 7.4%
+  Throughput: 5136.1 files/sec
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.10s (5167.1 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.10s (5009.4 files/sec)
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 500 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmpez0ffc_o...
+[INodeMapper] Built map with 500 files in 0.00s
+10:12:50 [INFO] parallel_analyzer.parallel_processor: Processing completed: 500/500 files in 0.11s (4731.1 files/sec)
+
+8 workers:
+  Time:       0.10s
+  Speedup:    0.29x
+  Efficiency: 3.6%
+  Throughput: 5000.6 files/sec
+
+======================================================================
+Testing with 1000 files
+======================================================================
+Creating test corpus: 1000 files × 100KB
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.06s (16374.1 files/sec)
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.05s (19273.3 files/sec)
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 1 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.05s (19506.7 files/sec)
+
+1 worker:
+  Time:       0.05s
+  Speedup:    1.00x
+  Efficiency: 100.0%
+  Throughput: 19215.5 files/sec
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.14s (7383.8 files/sec)
+10:12:51 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.14s (6996.2 files/sec)
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 2 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.14s (7302.2 files/sec)
+
+2 workers:
+  Time:       0.14s
+  Speedup:    0.38x
+  Efficiency: 19.0%
+  Throughput: 7292.0 files/sec
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.20s (5028.9 files/sec)
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.20s (5091.6 files/sec)
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 4 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.19s (5182.4 files/sec)
+
+4 workers:
+  Time:       0.20s
+  Speedup:    0.26x
+  Efficiency: 6.6%
+  Throughput: 5085.9 files/sec
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.20s (5102.5 files/sec)
+10:12:52 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:53 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.20s (4948.0 files/sec)
+10:12:53 [INFO] parallel_analyzer.parallel_processor: Starting parallel processing: 1000 files, 8 workers
+[INodeMapper] Building inode map for /tmp/tmp6ej2l6m7...
+[INodeMapper] Built map with 1000 files in 0.00s
+10:12:53 [INFO] parallel_analyzer.parallel_processor: Processing completed: 1000/1000 files in 0.21s (4673.8 files/sec)
+
+8 workers:
+  Time:       0.20s
+  Speedup:    0.26x
+  Efficiency: 3.2%
+  Throughput: 4943.6 files/sec
+
+======================================================================
+BENCHMARK COMPLETE
+======================================================================
