@@ -8,7 +8,7 @@ Figure~\ref{fig:models} runs the code the fork benchmarked, its thread engine ov
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{../figs/e5_models_d5.pdf}
+\figfile{width=0.9\textwidth}{../figs/e5_models_d5.pdf}
 \caption{Wall time of the fork's extent-lookup engine against threads (``seq'': the
 plain sequential loop) for 1{,}000 traced files, with a 5\,ms delay injected three
 ways. Left: 1{,}000 files of 100\,KB created together; right: 1{,}000 files sampled
@@ -47,5 +47,5 @@ inode map (\S\ref{sec:decompose}).
 sequential loop's time, for each delay model. Five runs each.}
 \label{tab:models}
 \small
-\input{../results/tab_models.tex}
+\inputtable{../results/tab_models.tex}
 \end{table}
