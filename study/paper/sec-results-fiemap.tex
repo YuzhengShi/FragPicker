@@ -1,0 +1,34 @@
+\subsection{What one extent lookup costs}
+\label{sec:fiemap}
+
+Table~\ref{tab:fiemap} times the fork's own lookup function (\texttt{stat},
+\texttt{open}, FIEMAP, \texttt{close}) over files with a controlled number of extents
+on four file systems, warm and cold, and counts the device reads per file. The extent
+counts in the table are measured, not intended: our punch-and-rewrite procedure gave
+exactly one extent per block on all four file systems.
+
+\begin{table}[t]
+\caption{Extent lookup per file (median of five passes over 100--1{,}000 files), and
+device reads per file in a cold pass. One thread unless stated.}
+\label{tab:fiemap}
+\small
+\input{../results/tab_fiemap.tex}
+\end{table}
+
+\paragraph{Warm, it is microseconds.} With the cache warm, a lookup costs
+16--25\,\textmu s for up to eight extents and grows with the extent count, because
+the ioctl copies every extent out (about 0.6\,ms for 512 extents). This is the
+normal case for FragPicker: the analysis runs right after the traced application has
+read these files, so their inodes and extent blocks are in memory.
+
+\paragraph{Cold, the cost is the extent tree, not the inode.} With the cache cold,
+files whose extents fit in the inode (four on ext4, more on XFS) still need almost no
+device reads: \textbf{0.01} reads per file on ext4 and \textbf{0.04} on XFS, because
+inode-table readahead brings in the inodes of hundreds of neighbouring files at once.
+Once the extents spill into a tree block, every file needs one read of its own (1.0
+per file on both, two to three for 512 extents), and the lookup cost rises to
+0.4--1.6\,ms on our loop device.
+
+\paragraph{Threads never helped.} In every row, four and sixteen threads were
+\emph{slower} per file than one, even in the rows where each file needs its own
+device read. \S\ref{sec:gil} explains why.

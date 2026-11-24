@@ -1,0 +1,36 @@
+\subsection{The interpreter lock and the device}
+\label{sec:gil}
+
+Python threads overlap only while they are outside the interpreter: a blocking system
+call releases the global interpreter lock (GIL) so that another thread can run. In
+CPython 3.12.x and 3.13.x, \texttt{fcntl.ioctl} releases it only when it can copy the
+argument into a 1{,}024-byte stack buffer. A larger writable buffer is passed to the
+kernel in place, and the call runs with the GIL held (\texttt{fcntl\_ioctl\_impl} in
+\texttt{Modules/fcntlmodule.c}, unchanged from v3.12.3 to v3.13.9; v3.14.0 releases
+the GIL on this path, which we read in the source but did not run). The fork's FIEMAP
+request has room for 32 extents, $32 + 32\cdot56 = 1{,}824$ bytes, so every FIEMAP call
+holds the lock for as long as the kernel takes, including any device read for an
+extent-tree block. The largest request that takes the releasing path holds 17 extents
+(984 bytes).
+
+Table~\ref{tab:gil} isolates the effect. Each of \textbf{[N]} files has 16 extents, so
+FIEMAP must read one extent-tree leaf per file; before each timed pass we drop the
+caches and \texttt{stat} every file, which brings the inodes in through readahead and
+leaves the leaf blocks cold. Both request sizes return identical extents for every
+file. We vary the device: \textbf{[results pending]}.
+
+\begin{table}[t]
+\caption{Speedup of 16 workers over one for FIEMAP calls that each wait for one device
+read, by request size, threads or processes, and device. Median of five passes, 95\%
+bootstrap interval.}
+\label{tab:gil}
+\small
+\input{../results/tab_gil.tex}
+\end{table}
+
+Two consequences follow. First, the condition the fork needs most, that waits overlap,
+fails exactly for the files FragPicker exists to fix: the fragmented ones, whose
+extents do not fit in the inode. Second, the user-space delay hid this as well,
+because \texttt{time.sleep} releases the GIL and runs before the ioctl. The fork's
+process engine would overlap the waits, but \texttt{--parallel} does not use it, and it
+would overlap work that the analysis does not need (\S\ref{sec:correct}).

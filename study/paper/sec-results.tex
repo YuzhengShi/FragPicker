@@ -1,0 +1,25 @@
+\section{Results}
+\label{sec:results}
+
+We first ask where the analysis time goes and how much of it the rewrite removes
+(\S\ref{sec:anatomy}, \S\ref{sec:ladder}). We then ask when threads could help at all.
+For the fork's thread pool to beat a single thread, four conditions must hold at once:
+\begin{enumerate}
+\item the metadata the lookups need must be \emph{cold}, or there is nothing to wait for
+  (\S\ref{sec:fiemap}, \S\ref{sec:models});
+\item the remaining device reads must be issued \emph{in the per-file part} that the
+  threads share, not in the single tree walk that precedes it (\S\ref{sec:decompose});
+\item a thread that waits must \emph{release the interpreter lock} (\S\ref{sec:gil});
+\item the device must serve \emph{several requests at once} (\S\ref{sec:gil}).
+\end{enumerate}
+The fork's user-space \texttt{sleep} satisfies all four by construction. Real lookups
+in FragPicker's workflow satisfy none of them in the common case, and we found no
+configuration of the fork's code in which all four held.
+
+\input{sec-results-anatomy}
+\input{sec-results-ladder}
+\input{sec-results-fiemap}
+\input{sec-results-models}
+\input{sec-results-decompose}
+\input{sec-results-gil}
+\input{sec-results-realdev}

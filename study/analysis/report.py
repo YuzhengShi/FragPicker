@@ -297,6 +297,8 @@ def e4(data, out):
         num("e4.%s.b%d.cold_us" % (fsn, b), g("cold", 1, "creation"), "e4_fiemap.jsonl")
         num("e4.%s.b%d.cold_reads_per_file" % (fsn, b), sorted(rr)[len(rr) // 2], "e4_fiemap.jsonl")
         num("e4.%s.b%d.extents" % (fsn, b), L["extents_median"], "e4_fiemap.jsonl")
+        num("e4.%s.b%d.cold16_us" % (fsn, b), g("cold", 16, "creation"), "e4_fiemap.jsonl")
+        num("e4.%s.b%d.cold4_us" % (fsn, b), g("cold", 4, "creation"), "e4_fiemap.jsonl")
     write_md(out, "e4_fiemap.md", "\n".join(lines) + "\n")
     fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.0))
     for i, fsn in enumerate(sorted({k[0] for k in lay})):
@@ -697,6 +699,47 @@ def tex_tables(out):
                "trace & $L$ & $F$ & (a) & best (d) (thr.) & (c) & pipeline (a)/(c) \\\\", "\\midrule"]
         tex += rows + ["\\bottomrule", "\\end{tabular}"]
         write_md(out, "tab_real.tex", "\n".join(tex) + "\n")
+
+    # Table: GIL x device (E8)
+    devs = [("plain", "loop, no delay"), ("dmdelay", "dm-delay"), ("nbd_qd1", "one request at a time"),
+            ("nbd_par", "32 in flight")]
+    vars_ = [("fork", "fork lookup, threads"), ("big", "1,824\\,B, threads"), ("small", "984\\,B, threads"),
+             ("big_mp", "1,824\\,B, processes"), ("fork_mp", "fork process engine")]
+    rows = []
+    for dv, dl in devs:
+        cells_ = []
+        for v, _ in vars_:
+            sp = NUMBERS.get("e8.%s.%s.speedup16" % (dv, v), {}).get("value")
+            cells_.append("--" if sp is None else "%s$\\times$" % fmt(sp[0]))
+        if any(c != "--" for c in cells_):
+            w1 = g("e8.%s.fork.w1_s" % dv)
+            rows.append("%s & %s & %s \\\\" % (dl, fmt(w1, 3), " & ".join(cells_)))
+    if rows:
+        tex = ["\\begin{tabular}{@{}lrrrrrr@{}}", "\\toprule",
+               "device & 1 thr. (s) & " + " & ".join(l for _, l in vars_) + " \\\\", "\\midrule"]
+        tex += rows + ["\\bottomrule", "\\end{tabular}"]
+        write_md(out, "tab_gil.tex", "\n".join(tex) + "\n")
+
+    # Table: extent lookup cost (E4)
+    rows = []
+    for fsn in ("ext4", "xfs", "btrfs", "f2fs"):
+        lab = fsn
+        for b in (1, 4, 8, 32, 128, 512):
+            ext = g("e4.%s.b%d.extents" % (fsn, b))
+            if ext is None:
+                continue
+            w = g("e4.%s.b%d.warm_us" % (fsn, b)); c_ = g("e4.%s.b%d.cold_us" % (fsn, b))
+            r = g("e4.%s.b%d.cold_reads_per_file" % (fsn, b)); t16 = g("e4.%s.b%d.cold16_us" % (fsn, b))
+            rows.append("%s & %d & %s & %s & %s & %s \\\\" % (lab, ext, fmt(w, 1), fmt(c_, 1),
+                        "%.2f" % r if r is not None else "--", fmt(t16, 1)))
+            lab = ""
+        rows.append("\\midrule")
+    if rows:
+        rows = rows[:-1]
+        tex = ["\\begin{tabular}{@{}lrrrrr@{}}", "\\toprule",
+               "fs & extents & warm (\\textmu s) & cold (\\textmu s) & cold reads & cold, 16 thr. (\\textmu s) \\\\",
+               "\\midrule"] + rows + ["\\bottomrule", "\\end{tabular}"]
+        write_md(out, "tab_fiemap.tex", "\n".join(tex) + "\n")
 
     # Table: delay models (E5): speedup of 16 threads (sequential loop time)
     models = [("sleep", "warm", "sleep (user space)"), ("dmdelay", "cold", "dm-delay, cold"),
