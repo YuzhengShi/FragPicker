@@ -56,6 +56,21 @@ def main():
         files = corpus.make_tree(MNT, a.T, per_dir=a.per_dir, size=a.file_kb * 1024, seed=a.seed)
         build_s = time.time() - t0
         print("tree: T=%d built in %.1fs" % (a.T, build_s), flush=True)
+        # trace lines carry no device id: inode numbers of root-file-system files that
+        # E0's traced processes read (libc, locale files, ...) alias files on /mnt
+        # whenever the same number exists there
+        foreign = {}
+        for p in ("/usr/lib/x86_64-linux-gnu/libc.so.6", "/usr/lib/locale/C.utf8/LC_CTYPE",
+                  "/usr/bin/python3.12", "/usr/lib/x86_64-linux-gnu/libz.so.1"):
+            try:
+                foreign[p] = os.stat(p).st_ino
+            except OSError:
+                pass
+        tree_inodes = {ino for ino, _ in files}
+        rungs.append_jsonl(os.path.join(DATA, "e2_aliasing.jsonl"), {
+            "exp": "e2", "kind": "aliasing", "fs": a.fs, "T": a.T, "foreign": foreign,
+            "collide": {p: i for p, i in foreign.items() if i in tree_inodes},
+            "tree_inode_min": min(tree_inodes), "tree_inode_max": max(tree_inodes)})
         if a.delay_ms is not None:
             fs.set_delay(a.delay_ms)
         versions = rungs.code_versions()

@@ -48,8 +48,18 @@ def mkfs(fstype, dev):
     sh(MKFS[fstype] + [dev])
 
 
+READAHEAD_KB = 128  # Linux default for real disks; loop/dm-delay inherit 2560, nbd 256
+
+
+def set_readahead(dev, kb=READAHEAD_KB):
+    """Same block-device readahead on every test device, so the models differ only in
+    their delay behaviour (blockdev counts in 512-byte sectors)."""
+    sh(["blockdev", "--setra", str(kb * 2), dev], check=False)
+
+
 def mount(dev, mnt, fstype, opts=None):
     os.makedirs(mnt, exist_ok=True)
+    set_readahead(dev)
     cmd = ["mount", "-t", fstype]
     if opts:
         cmd += ["-o", opts]
@@ -75,12 +85,15 @@ def dm_delay_create(name, dev, read_ms, write_ms=None):
         table = "0 %d delay %s 0 %d" % (n, dev, read_ms)
     else:
         table = "0 %d delay %s 0 %d %s 0 %d" % (n, dev, read_ms, dev, write_ms)
-    sh(["dmsetup", "create", name, "--table", table])
+    # WSL2 runs no udev: do not wait for it, and create the /dev/mapper node ourselves
+    sh(["dmsetup", "create", name, "--noudevsync", "--table", table])
+    sh(["dmsetup", "mknodes", name])
     return "/dev/mapper/" + name
 
 
 def dm_remove(name):
-    sh(["dmsetup", "remove", "--retry", name], check=False)
+    sh(["dmsetup", "remove", "--noudevsync", "--retry", name], check=False)
+    sh(["dmsetup", "mknodes"], check=False)
 
 
 def drop_caches():
@@ -97,7 +110,9 @@ def blk_name(dev):
 
 def blk_stat(dev):
     """Read-side counters from /sys/block/<dev>/stat: (read_ios, read_sectors, read_ticks_ms)."""
-    with open("/sys/block/%s/stat" % blk_name(dev)) as f:
+    # by device number: /dev/mapper nodes made by `dmsetup mknodes` are not symlinks
+    rdev = os.stat(dev).st_rdev
+    with open("/sys/dev/block/%d:%d/stat" % (os.major(rdev), os.minor(rdev))) as f:
         v = f.read().split()
     return {"read_ios": int(v[0]), "read_merges": int(v[1]),
             "read_sectors": int(v[2]), "read_ticks_ms": int(v[3]),
