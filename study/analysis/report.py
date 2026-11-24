@@ -44,6 +44,12 @@ def load(path):
     ex = EXCLUDE.get(os.path.basename(path))
     if ex and "ts_before" in ex:
         rows = [r for r in rows if r.get("ts") is None or r["ts"] >= ex["ts_before"]]
+    if ex and "where" in ex:  # drop rows whose fields all match
+        rows = [r for r in rows if not all(r.get(k) == v for k, v in ex["where"].items())]
+    for extra in (ex or {}).get("append", []):  # rows re-measured in another file
+        p2 = os.path.join(os.path.dirname(path), extra)
+        if os.path.exists(p2):
+            rows += load_jsonl(p2)
     return rows
 
 

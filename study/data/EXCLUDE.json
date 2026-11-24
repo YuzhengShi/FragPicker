@@ -2,5 +2,14 @@
   "e5_latency.jsonl": {
     "ts_before": 1795512645,
     "reason": "rows written by a first launch of batch 1 that was stopped after about one minute (2026-11-24 09:29Z) because its controlling process would have been killed by a tool timeout; the batch was restarted at 09:30:45Z. The rows are kept in the raw file and dropped from every table and figure."
+  },
+  "e4_fiemap.jsonl": {
+    "where": {
+      "fs": "f2fs"
+    },
+    "append": [
+      "e4_fiemap_f2fs.jsonl"
+    ],
+    "reason": "On F2FS the first run's fragmentation procedure (overwrite with fsync, no hole punch) left every file at one extent (F2FS updated the blocks in place), so its rows do not measure the intended extent counts. F2FS was re-run with punch-and-rewrite into e4_fiemap_f2fs.jsonl, which replaces these rows. The rows stay in the raw file."
   }
 }

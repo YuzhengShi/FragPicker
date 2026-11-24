@@ -49,7 +49,10 @@ def make_file(path, blocks, fstype, data):
         os.fsync(fd)
         if blocks > 1:
             for b in range(1, blocks, 2):
-                if fstype in ("ext4", "xfs"):
+                # punch first so that the rewrite must allocate a new block; btrfs
+                # (copy on write) moves overwritten blocks anyway. F2FS without the
+                # punch updates fsync'd overwrites in place and stays at one extent.
+                if fstype in ("ext4", "xfs", "f2fs"):
                     fallocate(fd, PUNCH, b * BLK, BLK)
                 os.pwrite(fd, data, b * BLK)
                 os.fsync(fd)
