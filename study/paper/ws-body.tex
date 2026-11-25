@@ -32,7 +32,7 @@ work in Python:
 \end{itemize}
 The parallel mode also computes extents that nothing reads, lists no files at all on
 file systems without FIEMAP, and deadlocks above 10{,}000 traced files (\S\ref{ws:correct}).
-All scripts, traces and raw data are released~\cite{forkbranch}.
+All scripts, traces and raw data are released~\cite{studybranch}.
 
 \section{The analysis phase and the fork}
 \label{ws:bg}
@@ -290,4 +290,4 @@ A thread pool that reproduced a 12.74$\times$ speedup against a user-space sleep
 to one thread once delays sit where devices impose them. The waits that remain are in
 the tree walk, where a few threads do help, and under CPython 3.12 the fork's FIEMAP
 request kept even those lookups that wait from overlapping. Scripts, traces, raw data and
-the full report are in the artifact~\cite{forkbranch}.
+the full report are in the artifact~\cite{studybranch}.
