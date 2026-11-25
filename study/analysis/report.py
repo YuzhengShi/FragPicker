@@ -920,6 +920,113 @@ def gil_by_python(out):
         f.write("\n".join(W) + "\n")
 
 
+def e13(data, out):
+    """GIL threshold: 16-thread speedup and device in-flight reads against request size."""
+    srcs = [("e13_boundary.jsonl", "py312", "CPython 3.12"), ("e13_boundary_py314.jsonl", "py314", "CPython 3.14")]
+    found = []
+    for fname, tag, lab in srcs:
+        p = os.path.join(data, fname)
+        if not os.path.exists(p):
+            continue
+        rows = [r for r in load(p) if r.get("kind") == "time"]
+        wall = collections.defaultdict(list)
+        imax = collections.defaultdict(list)
+        imean = collections.defaultdict(list)
+        size = {}
+        for r in rows:
+            k = (r["n_extents"], r["workers"])
+            wall[k].append(r["wall_s"])
+            imax[k].append(r["inflight"]["max"])
+            imean[k].append(r["inflight"]["mean_busy"])
+            size[r["n_extents"]] = r["req_bytes"]
+        ns = sorted(size)
+        pts = []
+        for n in ns:
+            if (n, 1) in wall and (n, 16) in wall:
+                sp = ratio_ci(wall[(n, 1)], wall[(n, 16)])
+                mx = max(imax[(n, 16)])
+                mn = median_ci(imean[(n, 16)])[0]
+                pts.append((n, size[n], sp, mx, mn))
+                num("e13.%s.n%d.speedup16" % (tag, n), list(sp), fname)
+                num("e13.%s.n%d.inflight16" % (tag, n), {"max": mx, "mean_busy": mn,
+                                                          "bytes": size[n]}, fname)
+        found.append((tag, lab, pts))
+    if not found:
+        return
+    lines = ["| extents | bytes | " + " | ".join("%s: 16 thr. speedup, in-flight max / mean" % lab for _, lab, _ in found) + " |",
+             "|---|---|" + "---|" * len(found)]
+    allns = sorted({p[0] for _, _, pts in found for p in pts})
+    for n in allns:
+        cols = []
+        b = None
+        for _, _, pts in found:
+            p = [x for x in pts if x[0] == n]
+            if p:
+                b = p[0][1]
+                cols.append("%.2f$\\times$, %d / %.1f" % (p[0][2][0], p[0][3], p[0][4]))
+            else:
+                cols.append("")
+        lines.append("| %d | %d | " % (n, b) + " | ".join(cols) + " |")
+    write_md(out, "e13_boundary.md", "\n".join(lines) + "\n")
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    for i, (tag, lab, pts) in enumerate(found):
+        ax.plot([p[1] for p in pts], [p[2][0] for p in pts], color=C[i], marker=MARK[i], ms=5, lw=1.6, label=lab)
+    ax.axvline(1024, color=INK2, lw=0.8, ls="--")
+    ax.text(1040, 1.25, "1,024 B", fontsize=6.5, color=INK2)
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log", base=2)
+    ax.set_xticks([128, 256, 512, 1024, 2048, 4096])
+    ax.set_xticklabels(["128", "256", "512", "1K", "2K", "4K"])
+    ax.set_yticks([1, 2, 4, 8, 16]); ax.set_yticklabels(["1", "2", "4", "8", "16"])
+    ax.set_xlabel("FIEMAP request size (bytes)", fontsize=8)
+    ax.set_ylabel("16 threads over one", fontsize=8)
+    style(ax)
+    ax.legend(fontsize=6.5, frameon=False, loc="lower left")
+    save(fig, out, "e13_boundary")
+
+
+def e14(data, out):
+    """Starting sort processes from threads or from worker processes, per interpreter."""
+    srcs = [("e14_spawn.jsonl", "py312", "3.12"), ("e14_spawn_py314.jsonl", "py314", "3.14"),
+            ("e14_spawn_py314t.jsonl", "py314t", "3.14t")]
+    series = []
+    lines = ["| Python | mode | " + " | ".join("W=%d" % w for w in (1, 2, 4, 8, 16)) + " |",
+             "|---|---|" + "---|" * 5]
+    for fname, tag, lab in srcs:
+        p = os.path.join(data, fname)
+        if not os.path.exists(p):
+            continue
+        cell = collections.defaultdict(list)
+        for r in load(p):
+            cell[(r["mode"], r["workers"])].append(r["spawns_per_s"])
+        for mode in ("threads", "processes"):
+            ws = sorted(w for (m, w) in cell if m == mode)
+            if not ws:
+                continue
+            meds = {w: median_ci(cell[(mode, w)])[0] for w in ws}
+            lines.append("| %s | %s | " % (lab, mode) + " | ".join(
+                "%.0f/s (%.1f$\\times$)" % (meds[w], meds[w] / meds[1]) if w in meds else "" for w in (1, 2, 4, 8, 16)) + " |")
+            for w in ws:
+                num("e14.%s.%s.W%d.spawns_per_s" % (tag, mode, w), list(median_ci(cell[(mode, w)])), fname)
+                num("e14.%s.%s.W%d.scaling" % (tag, mode, w), list(ratio_ci(cell[(mode, w)], cell[(mode, 1)])), fname)
+            series.append(("%s, %s" % (lab, mode), ws, [meds[w] for w in ws], mode))
+    if not series:
+        return
+    write_md(out, "e14_spawn.md", "\n".join(lines) + "\n")
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    order = [s for s in series if s[3] == "threads"] + [s for s in series if s[3] == "processes"][:1]
+    for i, (lab, ws, ys, mode) in enumerate(order):
+        ax.plot(ws, ys, color=C[i], marker=MARK[i], ms=5, lw=1.6, label=lab,
+                ls="-" if mode == "threads" else "--")
+    ax.set_xscale("log", base=2)
+    ax.set_xticks([1, 2, 4, 8, 16]); ax.set_xticklabels(["1", "2", "4", "8", "16"])
+    ax.set_xlabel("threads or worker processes", fontsize=8)
+    ax.set_ylabel("sort processes started per second", fontsize=8)
+    style(ax)
+    ax.legend(fontsize=6.3, frameon=False, loc="upper left")
+    save(fig, out, "e14_spawn")
+
+
 def walk_fig(out):
     """E10 (and E6's walk): speedup of the threaded scandir walk over one thread."""
     series = [("e10", "dmdelay", "dm-delay"), ("e10", "nbdpar", "NBD, 32 in flight"),
@@ -1107,6 +1214,13 @@ def main():
     e2(a.data, a.out, "e6_ladder.jsonl", "e6ladder")
     gil_by_python(a.out)
     walk_fig(a.out)
+    # batch 6: the interpreter lock in depth
+    e13(a.data, a.out)
+    e14(a.data, a.out)
+    for py in ("py314", "py314t"):
+        e2(a.data, a.out, "e2_ladder_%s.jsonl" % py, "e2%s" % py)
+        e9(a.data, a.out, "e9_calls_%s.jsonl" % py, "e9%s" % py)
+        e10(a.data, a.out, "e10_walk_%s.jsonl" % py, "e10%s" % py)
     tex_tables(a.out)
     os.makedirs(os.path.join(a.out, "results"), exist_ok=True)
     with open(os.path.join(a.out, "results", "numbers.json"), "w") as f:

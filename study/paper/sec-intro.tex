@@ -49,8 +49,11 @@ Our findings:
   request keeps CPython 3.12's interpreter lock held through the wait: 16 threads gain
   1.00$\times$, against 14.6$\times$ with a 984-byte request (\S\ref{sec:gil}); under
   CPython 3.14, which releases the lock for large buffers, the same code gains
-  13--15$\times$ (\S\ref{sec:gilpy}). On the Python 3.12 that we evaluated, the largest
-  gain we saw for the fork's own lookups was 1.4--1.6$\times$, on F2FS
+  13--15$\times$ (\S\ref{sec:gilpy}). The threshold is a step at 1{,}024 bytes, and the
+  same lock caps how fast threads start the parallel path's \texttt{sort} processes
+  (3.5$\times$), yet without any lock (3.14t) the parallel path stays 12.7$\times$ slower
+  than the rewrite (\S\ref{sec:gildepth}). On the Python 3.12 that we evaluated, the
+  largest gain we saw for the fork's own lookups was 1.4--1.6$\times$, on F2FS
   (\S\ref{sec:fiemap}).
 \item \textbf{Threads belong in the tree walk} (exploratory). A walk split across four
   threads overlaps the walk's device reads 3.9$\times$ under dm-delay, and one on 16

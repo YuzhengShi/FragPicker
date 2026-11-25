@@ -30,6 +30,53 @@ that each wait for one device read (medians of five passes).}
 \inputtable{../results/tab_gilpy.tex}
 \end{table}
 
+\subsection{The lock in depth}
+\label{sec:gildepth}
+
+\begin{figure*}[t]
+\centering
+\figfile{width=0.44\textwidth}{../figs/e13_boundary.pdf}\hfill
+\figfile{width=0.44\textwidth}{../figs/e14_spawn.pdf}
+\caption{Left: speedup of 16 threads over one for FIEMAP calls that each wait for one
+device read (dm-delay), against the size of the request. Right: \texttt{sort} processes
+started per second, as the fork's sorter starts them, from threads of one interpreter or
+from worker processes. Medians of three runs.}
+\label{fig:gildepth}
+\end{figure*}
+
+\paragraph{A threshold, seen from the device.} E13 sweeps the request from 1 to 64
+extents (88 to 3{,}616 bytes) over the same files (Figure~\ref{fig:gildepth}, left). On
+CPython 3.12, 16 threads are 14.5--14.9$\times$ faster than one for every request up to
+17 extents (984 bytes) and exactly as fast as one (0.99--1.00$\times$) from 18 extents
+(1{,}040 bytes) on; on 3.14 they are 14.5--14.9$\times$ faster at every size. A separate
+process sampled the device's in-flight reads during every pass: up to 17 extents it saw
+5--6 reads in flight on average, from 18 extents on one (a maximum of one for 18 to 32
+extents). The lock turns 16 threads into a queue of one. The change in 3.14 is CPython's
+rewrite of the \texttt{fcntl} module, which releases the lock around \texttt{ioctl}
+whatever the buffer size~\cite{cpython132742}.
+
+\paragraph{The lock also caps the parallel path's main cost.} The parallel path spends
+most of its time starting \texttt{sort} processes (\S\ref{sec:ladder}). E14 starts 1{,}000
+of them the way the fork's sorter does (Figure~\ref{fig:gildepth}, right). From threads
+the rate stops growing at four: on 16 threads it is 916 per second on 3.12 and 963 on
+3.14, 3.4 and 3.5 times one thread, while 16 worker processes reach 2{,}400--2{,}750 per
+second (9--10$\times$), and so do 16 threads on the free-threaded 3.14t (2{,}580,
+9.9$\times$).
+This matches the parallel path's plateau at $F = 1{,}000$: 5.4, 4.7 and 4.9\,s on 4, 8
+and 16 threads.
+
+\paragraph{Removing the lock does not rescue the parallel path.} On 3.14t the same
+ladder cell takes 3.43\,s on 16 threads (4.84\,s on 3.14) and the rewrite 0.27\,s, so the
+rewrite is still 12.7$\times$ faster: it does not win because of the lock.
+
+\paragraph{The remaining thread overheads are the lock.} On 3.14t, a warm \texttt{stat}
+on 16 threads costs 8--10\,\textmu s per file instead of about 60
+(\S\ref{sec:calls}), and the threaded walk of \S\ref{sec:walk} keeps scaling: 0.70\,s on
+16 threads under dm-delay (14$\times$ one thread, against 2.2$\times$ on 3.12 and 3.14),
+0.50\,s with 32 requests in flight on NBD, and 5.4$\times$ even on the plain loop device,
+where on 3.12 sixteen threads were 7.4 times slower than one. The
+one-request-at-a-time device still gains nothing (1.07$\times$).
+
 \subsection{Where each lookup waits}
 \label{sec:calls}
 

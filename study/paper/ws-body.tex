@@ -21,8 +21,10 @@ work in Python:
   overlap, and threads make the lookups slower (\S\ref{ws:models}).
 \item \textbf{The interpreter decides.} When lookups do wait, CPython 3.12 holds its
   global interpreter lock through the fork's 1{,}824-byte FIEMAP request, so 16 threads
-  gain nothing; with 984 bytes, or under CPython 3.14, they gain 13--15$\times$
-  (\S\ref{ws:gil}).
+  gain nothing; with 984 bytes, or under CPython 3.14, they gain 13--15$\times$. The
+  threshold is a step at 1{,}024 bytes, and the same lock caps how fast threads start
+  the parallel path's \texttt{sort} processes (3.5$\times$), yet removing it does not
+  make the parallel path competitive (\S\ref{ws:gil}).
 \item \textbf{Threads belong in the tree walk} (exploratory). In a cold, scattered tree
   the device time is in the walk that precedes the threads; a walk split across threads
   is 3.9$\times$ faster under emulated delay and 6.1$\times$ on a real network disk
@@ -195,6 +197,24 @@ file happens inside FIEMAP; on F2FS it happens in \texttt{stat}, which releases 
 and there 16 threads speed that call up 3.5--4.7$\times$. The \texttt{sleep} of the
 original evaluation released the lock and ran before the ioctl, so it hid this as well.
 
+\begin{figure}[t]
+\centering
+\figfile{width=0.92\columnwidth}{../figs/e13_boundary.pdf}
+\caption{16 threads over one for FIEMAP calls that each wait for one device read
+(dm-delay), against the request size. Medians of three runs.}
+\label{ws:fig:step}
+\end{figure}
+
+Sweeping the request from 1 to 64 extents turns the comparison into a step
+(Figure~\ref{ws:fig:step}): on 3.12, 16 threads gain 14.5--14.9$\times$ up to 17 extents
+(984 bytes) and 0.99--1.00$\times$ from 18 extents (1{,}040 bytes) on, and a sampler in a
+separate process sees the device given one read at a time. CPython's rewrite of the
+\texttt{fcntl} module removed the threshold in 3.14~\cite{cpython132742}. The same lock
+caps the parallel path's main cost: from threads, \texttt{sort} processes start at most
+3.5$\times$ faster than from one thread on 3.12 and 3.14, while worker processes, or
+threads on the free-threaded 3.14t, reach 9--10$\times$. Removing the lock still does not
+rescue the parallel path: on 3.14t it takes 3.43\,s against the rewrite's 0.27\,s.
+
 \subsection{Where threads could pay}
 \label{ws:walk}
 
@@ -211,7 +231,7 @@ Since a cold, scattered run spends its device time in the walk, we split an
 directory; \texttt{opendir} and \texttt{readdir} release the lock, and the inode map
 equals \texttt{find}'s in every run (Figure~\ref{ws:fig:walk}). Under dm-delay one thread
 takes 9.7\,s and four take 2.5\,s (3.9$\times$); sixteen take 4.4\,s, as passing the lock
-between them starts to cost. With 32 requests in flight on NBD the walk drops from 7.1 to
+between them starts to cost. On the free-threaded 3.14t, sixteen take 0.70\,s (14$\times$). With 32 requests in flight on NBD the walk drops from 7.1 to
 1.8\,s; on the one-at-a-time device nothing gains more than 1.06$\times$; on the fast loop
 device threads are slower. We repeated a subset on a virtual machine whose disk is
 network block storage (CPython 3.14.4, Linux 7.0). Random reads there took 35--52\,ms at
