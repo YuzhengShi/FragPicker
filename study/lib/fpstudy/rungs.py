@@ -134,6 +134,11 @@ def run_rung(rung, trace_path, workdir, timeout=3600, env_extra=None):
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     if pypath:
         env["PYTHONPATH"] = pypath
+    # interpreters without a psutil build (batch 6: 3.14, 3.14t) need the stand-in in the
+    # rungs' own processes too, after the code under test
+    extra = os.environ.get("FPSTUDY_EXTRA_PYTHONPATH")
+    if extra:
+        env["PYTHONPATH"] = (env["PYTHONPATH"] + ":" + extra) if env.get("PYTHONPATH") else extra
     if env_extra:
         env.update(env_extra)
     leaked_before = clean_tmp()
